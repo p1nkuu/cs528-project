@@ -1,5 +1,6 @@
 build
 .vscode
+IMU_ESP_IDF_STREAM/build
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
