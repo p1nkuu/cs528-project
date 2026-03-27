@@ -99,6 +99,11 @@ class SerialReader(threading.Thread):
         self.z.append(0.0)  # initial position
         self.d_t  = 0
         
+        self.cursor_x = 0.0
+        self.cursor_y = 0.0
+        self.friction = 0.95 # Helps bring the "pen" to a stop
+
+
         self.t    = deque(maxlen=buf_size)
         self.ax   = deque(maxlen=buf_size)
         self.ay   = deque(maxlen=buf_size)
@@ -129,13 +134,18 @@ class SerialReader(threading.Thread):
                             continue
                         ax, ay, az, gx, gy, gz, temp = parsed
 
-                        self.x.append(self.x[-1] + (DELAY**2) * ax)
-                        self.y.append(self.y[-1]  + (DELAY ** 2) * ay)
-                        self.z.append(self.z[-1] + (DELAY ** 2) * (az - 9.8)) # remove gravity
+                        # self.x.append(self.x[-1] + (DELAY**2) * ax)
+                        # self.y.append(self.y[-1]  + (DELAY ** 2) * ay)
+                        # self.z.append(self.z[-1] + (DELAY ** 2) * (az - 9.8)) # remove gravity
+
+                        self.cursor_x = (self.cursor_x + gx * 0.01) * self.friction
+                        self.cursor_y = (self.cursor_y + gy * 0.01) * self.friction
 
                         now = time.perf_counter() - t0
                         with self.lock:
-                            self.x.append(self.x); self.y.append(self.y); self.z.append(self.z)
+                            self.x.append(self.cursor_x)
+                            self.y.append(self.cursor_y)   
+                            self.z.append(gz)                          
                             self.t.append(now)
                             self.ax.append(ax);   self.ay.append(ay);   self.az.append(az)
                             self.gx.append(gx);   self.gy.append(gy);   self.gz.append(gz)
@@ -195,12 +205,10 @@ def main():
 
     ax_acc  = fig.add_subplot(gs[0])
     ax_gyro = fig.add_subplot(gs[1])
-    ax_temp = fig.add_subplot(gs[2])
     ax_pos = fig.add_subplot(gs[2])
 
     style_axes(ax_acc,  "Acceleration (g)")
     style_axes(ax_gyro, "Angular rate (°/s)")
-    style_axes(ax_temp, "Temperature (°C)")
     style_axes(ax_pos,  "Position (m)")
 
     # Title + status bar
@@ -220,9 +228,10 @@ def main():
 
     # lt,   = ax_temp.plot([], [], color=C["temp"], lw=1.5, label="Temperature")
 
-    lp_x, = ax_pos.plot([], [], color=C["x"], lw=1.2, label="Position X")
-    lp_y, = ax_pos.plot([], [], color=C["y"], lw=1.2, label="Position Y")
-    lp_z, = ax_pos.plot([], [], color=C["z"], lw=1.2, label="Position Z")
+    # Legend handles for Position (Air Drawing)
+    lp_x, = ax_pos.plot([], [], color=C["x"], lw=1.5, label="Pos X (Yaw)")
+    lp_y, = ax_pos.plot([], [], color=C["y"], lw=1.5, label="Pos Y (Pitch)")
+    lp_z, = ax_pos.plot([], [], color=C["z"], lw=1.5, label="Pos Z (Roll)")
 
 
     for a, lines in [(ax_acc,  [la_x, la_y, la_z]),
@@ -233,7 +242,6 @@ def main():
                        facecolor=C["panel"], edgecolor=C["grid"],
                        labelcolor=C["text"])
 
-    ax_temp.set_xlabel("Time (s)", fontsize=9)
 
     # Live numeric readouts
     def readout(ax, x, y, text=""):
@@ -247,13 +255,13 @@ def main():
     ro_gx = readout(ax_gyro, 1, 0.83)
     ro_gy = readout(ax_gyro, 1, 0.50)
     ro_gz = readout(ax_gyro, 1, 0.17)
-    ro_t  = readout(ax_temp, 1, 0.50)
     ro_px = readout(ax_pos,  1, 0.83)
     ro_py = readout(ax_pos,  1, 0.50)
     ro_pz = readout(ax_pos,  1, 0.17)
 
 
     def update(_):
+        # Unpack the snapshot from the thread-safe reader
         t, ax_, ay_, az_, gx_, gy_, gz_, tmp, px_, py_, pz_ = reader.snapshot()
 
         if len(t) < 2:
@@ -262,27 +270,30 @@ def main():
         t_now = t[-1]
         t_lo  = t_now - window
 
-        # Slice to the visible window
+        # Helper to slice data to the visible time window
         def trim(xs, ts):
             return [x for x, ti in zip(xs, ts) if ti >= t_lo]
 
-        tv  = [ti for ti in t  if ti >= t_lo]
+        # Shared time vectors for the X-axis
+        tv = [ti for ti in t if ti >= t_lo]
+
+        # Slice all data series
         axv = trim(ax_, t); ayv = trim(ay_, t); azv = trim(az_, t)
         gxv = trim(gx_, t); gyv = trim(gy_, t); gzv = trim(gz_, t)
-        tv2 = tv  # shared time vector
-
-        la_x.set_data(tv2, axv); la_y.set_data(tv2, ayv); la_z.set_data(tv2, azv)
-        lg_x.set_data(tv2, gxv); lg_y.set_data(tv2, gyv); lg_z.set_data(tv2, gzv)
-
-        tv3 = [ti for ti in t if ti >= t_lo]
+        pxv = trim(px_, t); pyv = trim(py_, t); pzv = trim(pz_, t)
         tmpv = trim(tmp, t)
-        lt.set_data(tv3, tmpv)
 
-        # X-axis range  (fixed [t_lo, t_now] window)
-        for a in (ax_acc, ax_gyro, ax_temp):
+        # Update line data for all plots
+        la_x.set_data(tv, axv); la_y.set_data(tv, ayv); la_z.set_data(tv, azv)
+        lg_x.set_data(tv, gxv); lg_y.set_data(tv, gyv); lg_z.set_data(tv, gzv)
+        lp_x.set_data(tv, pxv); lp_y.set_data(tv, pyv); lp_z.set_data(tv, pzv)
+        # lt.set_data(tv, tmpv) # Uncomment if you use the temp plot
+
+        # Synchronize X-axis limits for scrolling effect
+        for a in (ax_acc, ax_gyro, ax_pos):
             a.set_xlim(t_lo, t_now)
 
-        # Y-axis auto-scale with a little padding
+        # Auto-scale Y-axis for each plot based on visible data
         def auto_ylim(ax, *series):
             vals = [v for s in series for v in s]
             if vals:
@@ -290,11 +301,11 @@ def main():
                 pad = max((hi - lo) * 0.15, 0.05)
                 ax.set_ylim(lo - pad, hi + pad)
 
-        auto_ylim(ax_acc,  axv, ayv, azv)
+        auto_ylim(ax_acc, axv, ayv, azv)
         auto_ylim(ax_gyro, gxv, gyv, gzv)
-        auto_ylim(ax_temp, tmpv)
+        auto_ylim(ax_pos, pxv, pyv, pzv)
 
-        # Live readouts
+        # Update live numeric readouts on the right side
         if ax_:
             ro_ax.set_text(f"AX {ax_[-1]:+7.3f}")
             ro_ay.set_text(f"AY {ay_[-1]:+7.3f}")
@@ -302,8 +313,9 @@ def main():
             ro_gx.set_text(f"GX {gx_[-1]:+7.2f}")
             ro_gy.set_text(f"GY {gy_[-1]:+7.2f}")
             ro_gz.set_text(f"GZ {gz_[-1]:+7.2f}")
-            ro_t.set_text(f"{tmp[-1]:.2f} °C")
-
+            ro_px.set_text(f"PX {px_[-1]:+7.3f}")
+            ro_py.set_text(f"PY {py_[-1]:+7.3f}")
+            ro_pz.set_text(f"PZ {pz_[-1]:+7.3f}")
         status_txt.set_text(reader.status)
 
     from matplotlib.animation import FuncAnimation
