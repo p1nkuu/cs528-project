@@ -1,0 +1,2 @@
+source /Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/gdbinit/symbols
+source /Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/gdbinit/connect

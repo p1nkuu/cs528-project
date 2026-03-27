@@ -1,0 +1,19 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/esp_driver_parlio",
+		"source" : "/Users/shriyagautam/.espressif/v5.5.2/esp-idf/components/esp_driver_parlio"
+	}
+}

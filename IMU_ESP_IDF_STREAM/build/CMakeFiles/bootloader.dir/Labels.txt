@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/CMakeFiles/bootloader
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/CMakeFiles/bootloader.rule
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/CMakeFiles/bootloader-complete.rule
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/Users/shriyagautam/COMPSCI-528---Tutorial/Examples/IMU_ESP_IDF_STREAM/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
