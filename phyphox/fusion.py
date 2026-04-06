@@ -7,6 +7,7 @@ from visualization import plot_position_in_real_time
 # 1. Setup Parameters
 SAMPLE_RATE = 100  # Hz
 ZUPT_THRESHOLD = 0.04  # Sensitivity for detecting "static" state
+GYRO_THRESHOLD = 5.0  # Sensitivity for detecting "static" state (degrees per second)
 G_CONSTANT = 9.80665  # Conversion factor from m/s^2 to g
 
 # 2. Initialize AHRS and State
@@ -29,7 +30,7 @@ def track_step(gyro, accel, mag, time):
     
     # 3. ZUPT Drift Correction Logic
     # If total acceleration change is very low, we assume the sensor is still
-    is_static = np.linalg.norm(gyro) < 2.0 and abs(np.linalg.norm(accel) - 1.0) < ZUPT_THRESHOLD
+    is_static = np.linalg.norm(gyro) < GYRO_THRESHOLD and abs(np.linalg.norm(accel) - 1.0) < ZUPT_THRESHOLD
     
     if is_static:
         velocity = np.zeros(3)  # Reset velocity to STOP the drift
@@ -57,7 +58,7 @@ def drift_correction(readings):
     time = readings['buffer']['acc_time']['buffer'][0]
 
     if gyrX and gyrY and gyrZ and accX and accY and accZ and magX and magY and magZ and time:
-        gyro = np.array([gyrX, gyrY, gyrZ]) 
+        gyro = np.array([gyrX, gyrY, gyrZ]) * 57.29578 
         accel = np.array([accX, accY, accZ]) / G_CONSTANT
         mag = np.array([magX, magY, magZ])
         position, velocity, is_static = track_step(gyro, accel, mag, time)

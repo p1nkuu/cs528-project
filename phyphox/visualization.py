@@ -2,6 +2,9 @@ import matplotlib.pyplot as plt
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
+ax.set_xlabel('X Axis', color='red')
+ax.set_ylabel('Y Axis', color='green')
+ax.set_zlabel('Z Axis', color='blue')
 line_plot, = ax.plot([], [], [], marker='o', markersize=2)
 pos_x, pos_y, pos_z = [], [], []
 
