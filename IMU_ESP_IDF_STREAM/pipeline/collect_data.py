@@ -10,6 +10,7 @@ import serial.tools.list_ports
 BAUD_RATE = 115200
 SAMPLES_NEEDED = 100  # 2 seconds of data at 50Hz
 CSV_FILE = "dataset.csv"
+EXPECTED_CLASSES = ['Left', 'Right', 'Up', 'Down', 'Forward', 'Backward', 'Idle']
 
 # Regex that matches the streamed IMU output from plot_imu.py
 LINE_RE = re.compile(
@@ -58,12 +59,18 @@ def main():
     try:
         while True:
             print(f"\n---")
+            print(f"Valid classes: {', '.join(EXPECTED_CLASSES)}")
             user_input = input(f"Current label is '{current_label}'.\nEnter new label, 'q' to quit, or press Enter to keep '{current_label}' and record: ").strip()
             
             if user_input.lower() == 'q':
                 break
             elif user_input:
-                current_label = user_input
+                match_class = next((c for c in EXPECTED_CLASSES if c.lower() == user_input.lower()), None)
+                if match_class:
+                    current_label = match_class
+                else:
+                    print(f"⚠️ Warning: '{user_input}' is not a valid class. Please choose from: {', '.join(EXPECTED_CLASSES)}")
+                    continue
             
             print(f"Recording {SAMPLES_NEEDED} samples for label '{current_label}'...")
             
