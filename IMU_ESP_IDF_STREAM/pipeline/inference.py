@@ -8,7 +8,7 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 import tensorflow as tf
-from sklearn.preprocessing import StandardScaler
+import joblib
 
 # Configuration
 BAUD_RATE = 115200
@@ -16,6 +16,7 @@ WINDOW_SIZE = 100  # 2 seconds of data at 50Hz
 INFERENCE_INTERVAL = 0.5  # Run inference every 0.5 seconds
 CONFIDENCE_THRESHOLD = 0.8
 MODEL_FILE = "gesture_model.h5"
+SCALER_FILE = "scaler.pkl"
 
 EXPECTED_CLASSES = ['Left', 'Right', 'Up', 'Down', 'Forward', 'Backward', 'Idle']
 
@@ -78,17 +79,22 @@ def main():
         print("Error: Could not automatically detect a serial port. Please specify with --port.")
         return
 
-    # 1. Load the model
+    # 1. Load the model and scaler
     script_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(script_dir, MODEL_FILE)
+    scaler_path = os.path.join(script_dir, SCALER_FILE)
     
     if not os.path.exists(model_path):
         print(f"Error: Model not found at {model_path}. Train the model first.")
         return
+    if not os.path.exists(scaler_path):
+        print(f"Error: Scaler not found at {scaler_path}. Train the model first.")
+        return
         
-    print("Loading model...")
+    print("Loading model and scaler...")
     model = tf.keras.models.load_model(model_path)
-    print("Model loaded successfully.")
+    scaler = joblib.load(scaler_path)
+    print("Model and scaler loaded successfully.")
 
     # 2. Start the serial reading thread
     reader = threading.Thread(target=serial_reader_thread, args=(port, args.baud), daemon=True)
@@ -113,9 +119,8 @@ def main():
                 # Convert to numpy array: shape (100, 6)
                 X = np.array(current_window)
                 
-                # Normalize (Standardize) the exact same way it was done in training
-                scaler = StandardScaler()
-                X_scaled = scaler.fit_transform(X)
+                # Normalize using the pre-trained scaler
+                X_scaled = scaler.transform(X)
                 
                 # Model expects batch dimension: shape (1, 100, 6)
                 X_input = np.expand_dims(X_scaled, axis=0)
@@ -130,8 +135,7 @@ def main():
                 
                 # Only output if confidence is high and it isn't just idling
                 if confidence >= CONFIDENCE_THRESHOLD:
-                    if predicted_label != 'Idle':
-                        print(f"GESTURE DETECTED: {predicted_label} ({confidence:.2f} confidence)")
+                    print(f"GESTURE DETECTED: {predicted_label} ({confidence:.2f} confidence)")
                 else:
                     # Optional: uncomment if you want to see when it fails the threshold
                     pass 

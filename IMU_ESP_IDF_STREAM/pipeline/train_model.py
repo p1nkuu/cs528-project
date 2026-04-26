@@ -3,13 +3,16 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, Dropout, Flatten, Dense, Input
 from tensorflow.keras.utils import to_categorical
+import joblib
 
 # Config
 CSV_FILE = "dataset.csv"
 MODEL_NAME = "gesture_model.h5"
+SCALER_NAME = "scaler.pkl"
 SAMPLES_PER_WINDOW = 100
 FEATURES = ['ax', 'ay', 'az', 'gx', 'gy', 'gz']
 NUM_FEATURES = len(FEATURES)
@@ -58,7 +61,7 @@ def load_and_preprocess_data(csv_path):
     # One-hot encode the target
     y_categorical = to_categorical(y_encoded, num_classes=len(EXPECTED_CLASSES))
     
-    return X, y_categorical, encoder.classes_
+    return X, y_categorical, encoder.classes_, scaler
 
 def build_model(input_shape, num_classes):
     model = Sequential([
@@ -84,13 +87,18 @@ def main():
     
     # 1. Load and process
     try:
-        X, y, classes = load_and_preprocess_data(csv_path)
+        X, y, classes, scaler = load_and_preprocess_data(csv_path)
     except Exception as e:
         print(f"Error during data loading: {e}")
         return
 
     print(f"Classes found: {classes}")
     print(f"Input shape: {X.shape}") # Should be (N, 100, 6)
+    
+    # Save the scaler for inference
+    out_scaler_path = os.path.join(script_dir, SCALER_NAME)
+    joblib.dump(scaler, out_scaler_path)
+    print(f"Saved standardization scaler to '{out_scaler_path}'")
     
     # 2. Split train/test (80% train, 20% test)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
