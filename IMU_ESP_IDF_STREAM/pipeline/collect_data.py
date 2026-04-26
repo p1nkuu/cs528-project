@@ -8,6 +8,7 @@ import serial.tools.list_ports
 
 # Configuration
 BAUD_RATE = 115200
+SAMPLE_HZ = 50
 SAMPLES_NEEDED = 100  # 2 seconds of data at 50Hz
 CSV_FILE = "dataset.csv"
 EXPECTED_CLASSES = ['Left', 'Right', 'Up', 'Down', 'Forward', 'Backward', 'Idle']
@@ -83,6 +84,8 @@ def main():
             ser.reset_input_buffer()
             
             valid_samples = 0
+            next_sample_time = time.time()
+            
             while valid_samples < SAMPLES_NEEDED:
                 line = ser.readline().decode('utf-8', errors='ignore').strip()
                 if not line:
@@ -90,23 +93,34 @@ def main():
                 
                 match = LINE_RE.search(line)
                 if match:
-                    group = match.groupdict()
-                    data.append({
-                        "window_id": window_id,
-                        "timestamp_ms": int(time.time() * 1000),
-                        "label": current_label,
-                        "ax": float(group["ax"]),
-                        "ay": float(group["ay"]),
-                        "az": float(group["az"]),
-                        "gx": float(group["gx"]),
-                        "gy": float(group["gy"]),
-                        "gz": float(group["gz"])
-                    })
-                    valid_samples += 1
+                    current_time = time.time()
                     
-                    # Print progress bar every 20 samples
-                    if valid_samples % 20 == 0:
-                        print(f"[{valid_samples}/{SAMPLES_NEEDED}] ...")
+                    # Throttle collection to match exactly our expected SAMPLE_HZ
+                    if current_time >= next_sample_time:
+                        group = match.groupdict()
+                        data.append({
+                            "window_id": window_id,
+                            "timestamp_ms": int(current_time * 1000),
+                            "label": current_label,
+                            "ax": float(group["ax"]),
+                            "ay": float(group["ay"]),
+                            "az": float(group["az"]),
+                            "gx": float(group["gx"]),
+                            "gy": float(group["gy"]),
+                            "gz": float(group["gz"])
+                        })
+                        valid_samples += 1
+                        
+                        # Set target time for the next sample to maintain 50Hz exactly
+                        next_sample_time += (1.0 / SAMPLE_HZ)
+                        # If we fell significantly behind (e.g. PC lag, or slow serial), 
+                        # reset next_sample_time to current interval to prevent burst reading
+                        if current_time > next_sample_time:
+                            next_sample_time = current_time + (1.0 / SAMPLE_HZ)
+                        
+                        # Print progress bar every 20 samples
+                        if valid_samples % 20 == 0:
+                            print(f"[{valid_samples}/{SAMPLES_NEEDED}] ...")
 
             # Convert to Pandas DataFrame
             df = pd.DataFrame(data)
