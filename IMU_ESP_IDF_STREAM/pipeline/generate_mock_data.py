@@ -36,6 +36,7 @@ def main():
             for i in range(SAMPLES_PER_WINDOW):
                 data.append({
                     "window_id": window_id,
+                    "timestamp_ms": window_id + (i * 20), # Mock 50Hz (20ms step)
                     "label": label,
                     "ax": ax[i],
                     "ay": ay[i],

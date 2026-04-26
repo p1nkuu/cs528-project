@@ -93,6 +93,7 @@ def main():
                     group = match.groupdict()
                     data.append({
                         "window_id": window_id,
+                        "timestamp_ms": int(time.time() * 1000),
                         "label": current_label,
                         "ax": float(group["ax"]),
                         "ay": float(group["ay"]),
