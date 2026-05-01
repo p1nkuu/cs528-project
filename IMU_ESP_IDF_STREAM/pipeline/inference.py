@@ -10,15 +10,17 @@ import serial.tools.list_ports
 import tensorflow as tf
 import joblib
 
+import config
+
 # Configuration
-BAUD_RATE = 115200
-WINDOW_SIZE = 100  # 2 seconds of data at 50Hz
+BAUD_RATE = config.BAUD_RATE
+WINDOW_SIZE = config.SAMPLES_PER_WINDOW
 INFERENCE_INTERVAL = 0.5  # Run inference every 0.5 seconds
 CONFIDENCE_THRESHOLD = 0.8
-MODEL_FILE = "gesture_model.h5"
-SCALER_FILE = "scaler.pkl"
+MODEL_FILE = config.MODEL_NAME
+SCALER_FILE = config.SCALER_NAME
 
-EXPECTED_CLASSES = ['Left', 'Right', 'Up', 'Down', 'Forward', 'Backward', 'Idle']
+EXPECTED_CLASSES = config.EXPECTED_CLASSES
 
 # Regex that matches the streamed IMU output
 LINE_RE = re.compile(

@@ -6,12 +6,14 @@ import pandas as pd
 import serial
 import serial.tools.list_ports
 
+import config
+
 # Configuration
-BAUD_RATE = 115200
-SAMPLE_HZ = 100
-SAMPLES_NEEDED = 100  # 2 seconds of data at 50Hz
-CSV_FILE = "dataset.csv"
-EXPECTED_CLASSES = ['Left', 'Right', 'Up', 'Down', 'Forward', 'Backward', 'Idle']
+BAUD_RATE = config.BAUD_RATE
+SAMPLE_HZ = config.SAMPLE_HZ
+SAMPLES_NEEDED = config.SAMPLES_PER_WINDOW
+CSV_FILE = config.CSV_FILE
+EXPECTED_CLASSES = config.EXPECTED_CLASSES
 
 # Regex that matches the streamed IMU output from plot_imu.py
 LINE_RE = re.compile(

@@ -9,14 +9,16 @@ from tensorflow.keras.layers import Conv1D, MaxPooling1D, Dropout, Flatten, Dens
 from tensorflow.keras.utils import to_categorical
 import joblib
 
+import config
+
 # Config
-CSV_FILE = "dataset.csv"
-MODEL_NAME = "gesture_model.h5"
-SCALER_NAME = "scaler.pkl"
-SAMPLES_PER_WINDOW = 100
-FEATURES = ['ax', 'ay', 'az', 'gx', 'gy', 'gz']
+CSV_FILE = config.CSV_FILE
+MODEL_NAME = config.MODEL_NAME
+SCALER_NAME = config.SCALER_NAME
+SAMPLES_PER_WINDOW = config.SAMPLES_PER_WINDOW
+FEATURES = config.FEATURES
 NUM_FEATURES = len(FEATURES)
-EXPECTED_CLASSES = ['Left', 'Right', 'Up', 'Down', 'Forward', 'Backward', 'Idle']
+EXPECTED_CLASSES = config.EXPECTED_CLASSES
 
 def load_and_preprocess_data(csv_path):
     if not os.path.exists(csv_path):
