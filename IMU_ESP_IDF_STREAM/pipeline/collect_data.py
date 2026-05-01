@@ -8,7 +8,7 @@ import serial.tools.list_ports
 
 # Configuration
 BAUD_RATE = 115200
-SAMPLE_HZ = 50
+SAMPLE_HZ = 100
 SAMPLES_NEEDED = 100  # 2 seconds of data at 50Hz
 CSV_FILE = "dataset.csv"
 EXPECTED_CLASSES = ['Left', 'Right', 'Up', 'Down', 'Forward', 'Backward', 'Idle']
