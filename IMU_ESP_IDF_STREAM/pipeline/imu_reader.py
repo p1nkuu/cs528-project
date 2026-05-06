@@ -6,8 +6,8 @@ import os
 
 SERIAL_PORT = 'COM4' 
 BAUD_RATE = 115200
-OUTPUT_DIR = 'data/hw3/down'
-FILE_PREFIX = 'DOWN'
+OUTPUT_DIR = 'data/tung/backward'
+FILE_PREFIX = 'BACKWARD'
 RECORD_DURATION = 1.0
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)

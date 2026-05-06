@@ -44,7 +44,7 @@ def main():
                 data_array = np.array(buffer)
                 accel_std = np.mean(np.std(data_array[:, :3], axis=0))
                 
-                if accel_std > 0.2:
+                if accel_std > 0.1:
                     features = extract_features_from_array(data_array)
                     features_scaled = scaler.transform([features])
                     prediction = svm_model.predict(features_scaled)[0]

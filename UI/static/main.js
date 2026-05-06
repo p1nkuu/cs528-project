@@ -14,6 +14,16 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputEncoding = THREE.sRGBEncoding;
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
+// OrbitControls
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.enableZoom = true;
+controls.enablePan = false;
+// Lock vertical rotation (polar angle) so the "up" direction stays fixed
+controls.minPolarAngle = Math.PI / 3; 
+controls.maxPolarAngle = Math.PI / 3;
+
 // Cube Parameters (1x1x1 logic, but we scale visually by 2 so coordinates are -1, 0, 1)
 const size = 2; // Visual size
 
@@ -72,9 +82,7 @@ window.addEventListener('resize', () => {
 function animate() {
     requestAnimationFrame(animate);
     
-    // Slow rotation of the whole scene for better 3D depth perception
-    scene.rotation.y += 0.002;
-    scene.rotation.x = Math.sin(Date.now() * 0.0005) * 0.1;
+    controls.update(); // needed for damping
     
     // Pulsate halo
     const scale = 1 + Math.sin(Date.now() * 0.005) * 0.2;
