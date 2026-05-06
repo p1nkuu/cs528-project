@@ -1,3 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# IMPORTANT WARNING:
+# THIS FILE IS DEPREICATED, USE IMU_READER.PY INSTEAD TO COLLECT DATA.
+
+
+
+
+
+
+
 import time
 import argparse
 import re
