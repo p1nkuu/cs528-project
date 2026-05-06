@@ -3,6 +3,7 @@ import re
 import numpy as np
 import joblib
 import time
+import requests
 from collections import deque, Counter
 from features import extract_features_from_array
 
@@ -11,6 +12,7 @@ BAUD_RATE = 115200
 WINDOW_SIZE = 100
 OVERLAP = 99
 VOTE_COUNT = 100
+UI_SERVER_URL = "http://localhost:8000/predict"
 
 def main():
     scaler = joblib.load('models/scaler.joblib')
@@ -51,6 +53,13 @@ def main():
                     if len(prediction_history) == VOTE_COUNT:
                         most_common = Counter(prediction_history).most_common(1)[0][0]
                         print(f"[{time.strftime('%H:%M:%S')}] Detected Gesture: {most_common}")
+                        
+                        # Send to UI if running
+                        try:
+                            requests.post(UI_SERVER_URL, json={"action": str(most_common)}, timeout=0.1)
+                        except requests.exceptions.RequestException:
+                            pass # Silently ignore connection errors
+                            
                         prediction_history.clear()
                 else:
                     prediction_history.clear()

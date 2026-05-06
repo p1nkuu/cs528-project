@@ -1,0 +1,101 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #0b0c10;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #c5c6c7;
+}
+
+#canvas-container {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+#ui-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    pointer-events: none;
+    background: rgba(11, 12, 16, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #45a29e;
+    box-shadow: 0 0 15px rgba(69, 162, 158, 0.3);
+    max-width: 300px;
+}
+
+h1 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    color: #66fcf1;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+p {
+    margin: 0 0 20px 0;
+    font-size: 14px;
+    color: #c5c6c7;
+}
+
+#status {
+    font-size: 18px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+#last-action {
+    color: #66fcf1;
+    text-transform: uppercase;
+}
+
+#logs-container {
+    margin-bottom: 20px;
+    border-top: 1px solid #1f2833;
+    padding-top: 10px;
+}
+
+h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #45a29e;
+    text-transform: uppercase;
+}
+
+#logs {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 120px;
+    overflow-y: hidden;
+    font-size: 12px;
+}
+
+#logs li {
+    padding: 4px 0;
+    border-bottom: 1px dashed #1f2833;
+}
+
+#coordinates {
+    font-family: monospace;
+    font-size: 14px;
+    background: #1f2833;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    color: #66fcf1;
+}
+
+.flash {
+    animation: textFlash 0.3s ease-out;
+}
+
+@keyframes textFlash {
+    0% { color: #fff; text-shadow: 0 0 10px #fff; }
+    100% { color: #66fcf1; text-shadow: none; }
+}
