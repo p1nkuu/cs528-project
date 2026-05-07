@@ -20,13 +20,115 @@ body {
     top: 20px;
     left: 20px;
     z-index: 10;
-    pointer-events: none;
+    pointer-events: auto;
     background: rgba(11, 12, 16, 0.8);
     padding: 20px;
     border-radius: 10px;
     border: 1px solid #45a29e;
     box-shadow: 0 0 15px rgba(69, 162, 158, 0.3);
     max-width: 300px;
+}
+
+#password-builder {
+    margin-bottom: 20px;
+    border-top: 1px solid #1f2833;
+    padding-top: 10px;
+}
+
+#password-builder input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #45a29e;
+    background: #1f2833;
+    color: #c5c6c7;
+    outline: none;
+}
+
+#password-builder input::placeholder {
+    color: #7f8c8d;
+}
+
+.button-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.button-row button {
+    flex: 1;
+    padding: 9px 8px;
+    border: 1px solid #45a29e;
+    border-radius: 6px;
+    background: #1f2833;
+    color: #66fcf1;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.button-row button:hover {
+    background: #233140;
+}
+
+.button-row button.active {
+    background: #45a29e;
+    color: #0b0c10;
+}
+
+#recording-status,
+#sequence-preview,
+#saved-status {
+    font-size: 12px;
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+#sequence-preview {
+    margin-top: 10px;
+}
+
+.sequence-label {
+    margin-bottom: 8px;
+    color: #9be7d4;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+#sequence-slots {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+
+.sequence-slot {
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    border: 1px solid #45a29e;
+    background: #1f2833;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #66fcf1;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.sequence-slot.filled {
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.25), rgba(69, 162, 158, 0.35));
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.25);
+}
+
+.sequence-slot.locked {
+    border-color: #9be7d4;
+    color: #0b0c10;
+    background: #66fcf1;
+}
+
+#saved-status {
+    color: #9be7d4;
 }
 
 h1 {

@@ -14,7 +14,25 @@
     <div id="ui-container">
         <div id="header">
             <h1>3D Gesture Navigator</h1>
-            <p>Perform gestures to move the glowing point.</p>
+            <p>Perform gestures to move the glowing point, or record a spatial password.</p>
+        </div>
+        <div id="password-builder">
+            <h3>Password Builder</h3>
+            <input id="password-name" type="text" placeholder="Password name" />
+            <div class="button-row">
+                <button id="start-recording">Start Recording</button>
+                <button id="stop-recording">Stop</button>
+            </div>
+            <div class="button-row">
+                <button id="save-password">Save Password</button>
+                <button id="clear-password">Clear</button>
+            </div>
+            <div id="recording-status">Status: idle</div>
+            <div id="sequence-preview">
+                <div class="sequence-label">Password Input</div>
+                <div id="sequence-slots" aria-label="Six character password input"></div>
+            </div>
+            <div id="saved-status"></div>
         </div>
         <div id="status">
             Last Action: <span id="last-action">waiting...</span>

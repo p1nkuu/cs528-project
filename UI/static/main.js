@@ -66,6 +66,9 @@ scene.add(cursor);
 
 // State tracking (logical grid from -1 to 1)
 let gridPos = { x: -1, y: -1, z: 1 }; // Start at front-bottom-left
+let isRecording = false;
+let recordedSequence = [];
+const PASSWORD_LENGTH = 6;
 
 // Initial positioning
 cursor.position.set(gridPos.x, gridPos.y, gridPos.z);
@@ -95,6 +98,120 @@ animate();
 // WebSocket Connection
 const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/subscriber`);
+
+const passwordNameInput = document.getElementById('password-name');
+const startRecordingButton = document.getElementById('start-recording');
+const stopRecordingButton = document.getElementById('stop-recording');
+const savePasswordButton = document.getElementById('save-password');
+const clearPasswordButton = document.getElementById('clear-password');
+const recordingStatus = document.getElementById('recording-status');
+const sequenceSlots = document.getElementById('sequence-slots');
+const savedStatus = document.getElementById('saved-status');
+
+function buildPasswordSlots() {
+    sequenceSlots.innerHTML = '';
+    for (let index = 0; index < PASSWORD_LENGTH; index += 1) {
+        const slot = document.createElement('div');
+        slot.className = 'sequence-slot';
+        slot.dataset.index = String(index);
+        slot.innerText = String(index + 1);
+        sequenceSlots.appendChild(slot);
+    }
+}
+
+function renderRecordedSequence() {
+    const slots = Array.from(sequenceSlots.children);
+    slots.forEach((slot, index) => {
+        slot.classList.remove('filled', 'locked');
+        if (index < recordedSequence.length) {
+            slot.classList.add('filled');
+            slot.innerText = recordedSequence[index].toUpperCase();
+        } else {
+            slot.innerText = String(index + 1);
+        }
+    });
+
+    if (recordedSequence.length === PASSWORD_LENGTH) {
+        slots.forEach((slot) => slot.classList.add('locked'));
+        recordingStatus.innerText = 'Status: password complete';
+        startRecordingButton.classList.remove('active');
+        stopRecordingButton.classList.remove('active');
+    }
+}
+
+buildPasswordSlots();
+
+startRecordingButton.addEventListener('click', () => {
+    isRecording = true;
+    startRecordingButton.classList.add('active');
+    stopRecordingButton.classList.remove('active');
+    recordingStatus.innerText = 'Status: recording';
+    logEvent('Password recording started');
+});
+
+stopRecordingButton.addEventListener('click', () => {
+    isRecording = false;
+    startRecordingButton.classList.remove('active');
+    stopRecordingButton.classList.add('active');
+    recordingStatus.innerText = 'Status: paused';
+    logEvent('Password recording stopped');
+});
+
+clearPasswordButton.addEventListener('click', () => {
+    recordedSequence = [];
+    renderRecordedSequence();
+    savedStatus.innerText = 'Cleared current sequence.';
+    logEvent('Current password sequence cleared');
+});
+
+savePasswordButton.addEventListener('click', async () => {
+    const name = passwordNameInput.value.trim();
+    if (!name) {
+        savedStatus.innerText = 'Enter a password name first.';
+        return;
+    }
+
+    if (recordedSequence.length !== PASSWORD_LENGTH) {
+        savedStatus.innerText = 'Record exactly 6 gestures before saving.';
+        return;
+    }
+
+    try {
+        const response = await fetch('/passwords/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, sequence: recordedSequence }),
+        });
+        const payload = await response.json();
+
+        if (payload.status === 'ok') {
+            savedStatus.innerText = `Saved "${payload.saved.name}" to the computer.`;
+            logEvent(`Password saved: ${payload.saved.name}`);
+            await refreshSavedPasswords();
+        } else {
+            savedStatus.innerText = payload.message || 'Could not save password.';
+        }
+    } catch (error) {
+        savedStatus.innerText = 'Save failed. Check that the backend is running.';
+        logEvent('Password save failed', true);
+    }
+});
+
+async function refreshSavedPasswords() {
+    try {
+        const response = await fetch('/passwords');
+        const payload = await response.json();
+        if (payload.status === 'ok') {
+            const count = payload.passwords.length;
+            savedStatus.innerText = `${count} saved password${count === 1 ? '' : 's'} on this computer.`;
+        }
+    } catch (error) {
+        // Ignore refresh errors when backend is unavailable.
+    }
+}
+
+renderRecordedSequence();
+refreshSavedPasswords();
 
 ws.onopen = () => {
     console.log("WebSocket connected.");
@@ -150,6 +267,17 @@ function handleAction(action) {
     if(moved) {
         // Update state
         gridPos = target;
+
+        if (isRecording && recordedSequence.length < PASSWORD_LENGTH) {
+            recordedSequence.push(action);
+            renderRecordedSequence();
+
+            if (recordedSequence.length === PASSWORD_LENGTH) {
+                isRecording = false;
+                recordingStatus.innerText = 'Status: password complete';
+                logEvent('Password input reached 6 gestures');
+            }
+        }
         
         // Animate movement using GSAP
         gsap.to(cursor.position, {

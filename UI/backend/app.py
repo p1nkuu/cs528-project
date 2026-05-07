@@ -1,15 +1,35 @@
-import asyncio
+import json
+import os
+from datetime import datetime
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
-import os
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import uvicorn
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Mount the static directory
 static_dir = os.path.join(os.path.dirname(__file__), "../static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+data_dir = os.path.join(os.path.dirname(__file__), "../data")
+os.makedirs(data_dir, exist_ok=True)
+password_file = os.path.join(data_dir, "saved_passwords.json")
+
+if not os.path.exists(password_file):
+    with open(password_file, "w", encoding="utf-8") as file_handle:
+        json.dump([], file_handle, indent=2)
 
 # Store connected frontend clients
 class ConnectionManager:
@@ -33,6 +53,11 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+
+class PasswordSaveRequest(BaseModel):
+    name: str
+    sequence: list[str]
+
 @app.get("/")
 def read_root():
     return RedirectResponse(url="/static/index.html")
@@ -47,8 +72,6 @@ async def websocket_subscriber(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-from pydantic import BaseModel
-
 class ActionRequest(BaseModel):
     action: str
 
@@ -59,6 +82,40 @@ async def post_predict(req: ActionRequest):
     """
     await manager.broadcast(req.action)
     return {"status": "ok"}
+
+
+@app.post("/passwords/save")
+async def save_password(req: PasswordSaveRequest):
+    normalized_name = req.name.strip()
+    normalized_sequence = [item.strip().lower() for item in req.sequence if item.strip()]
+
+    if not normalized_name:
+        return {"status": "error", "message": "Password name is required."}
+
+    if len(normalized_sequence) != 6:
+        return {"status": "error", "message": "Password sequence must contain exactly 6 moves."}
+
+    with open(password_file, "r", encoding="utf-8") as file_handle:
+        saved_passwords = json.load(file_handle)
+
+    entry = {
+        "name": normalized_name,
+        "sequence": normalized_sequence,
+        "created_at": datetime.utcnow().isoformat() + "Z",
+    }
+    saved_passwords.append(entry)
+
+    with open(password_file, "w", encoding="utf-8") as file_handle:
+        json.dump(saved_passwords, file_handle, indent=2)
+
+    return {"status": "ok", "saved": entry}
+
+
+@app.get("/passwords")
+async def list_passwords():
+    with open(password_file, "r", encoding="utf-8") as file_handle:
+        saved_passwords = json.load(file_handle)
+    return {"status": "ok", "passwords": saved_passwords}
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
