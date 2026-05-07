@@ -58,6 +58,10 @@ class PasswordSaveRequest(BaseModel):
     name: str
     sequence: list[str]
 
+
+class PasswordVerifyRequest(BaseModel):
+    sequence: list[str]
+
 @app.get("/")
 def read_root():
     return RedirectResponse(url="/static/index.html")
@@ -116,6 +120,27 @@ async def list_passwords():
     with open(password_file, "r", encoding="utf-8") as file_handle:
         saved_passwords = json.load(file_handle)
     return {"status": "ok", "passwords": saved_passwords}
+
+
+@app.post("/passwords/verify")
+async def verify_password(req: PasswordVerifyRequest):
+    normalized_sequence = [item.strip().lower() for item in req.sequence if item.strip()]
+
+    if len(normalized_sequence) != 6:
+        return {"status": "error", "message": "Password sequence must contain exactly 6 moves."}
+
+    with open(password_file, "r", encoding="utf-8") as file_handle:
+        saved_passwords = json.load(file_handle)
+
+    for saved_password in saved_passwords:
+        if [step.strip().lower() for step in saved_password.get("sequence", [])] == normalized_sequence:
+            return {
+                "status": "ok",
+                "matched": True,
+                "user_name": saved_password.get("name", "User"),
+            }
+
+    return {"status": "ok", "matched": False}
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

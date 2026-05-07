@@ -21,7 +21,7 @@ body {
     left: 20px;
     z-index: 10;
     pointer-events: auto;
-    background: rgba(11, 12, 16, 0.8);
+    background: linear-gradient(180deg, rgba(11, 12, 16, 0.92), rgba(14, 18, 26, 0.86));
     padding: 20px;
     border-radius: 10px;
     border: 1px solid #45a29e;
@@ -29,13 +29,13 @@ body {
     max-width: 300px;
 }
 
-#password-builder {
+#auth-panel {
     margin-bottom: 20px;
     border-top: 1px solid #1f2833;
     padding-top: 10px;
 }
 
-#password-builder input {
+#auth-panel input {
     width: 100%;
     box-sizing: border-box;
     margin-bottom: 10px;
@@ -47,7 +47,7 @@ body {
     outline: none;
 }
 
-#password-builder input::placeholder {
+#auth-panel input::placeholder {
     color: #7f8c8d;
 }
 
@@ -75,6 +75,19 @@ body {
 .button-row button.active {
     background: #45a29e;
     color: #0b0c10;
+}
+
+.link-button {
+    width: 100%;
+    margin-top: 6px;
+    margin-bottom: 8px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #9be7d4;
+    cursor: pointer;
+    text-align: left;
+    font-size: 12px;
 }
 
 #recording-status,
@@ -129,6 +142,27 @@ body {
 
 #saved-status {
     color: #9be7d4;
+}
+
+#mode-banner,
+#login-status {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(31, 40, 51, 0.9);
+    border: 1px solid rgba(69, 162, 158, 0.35);
+    font-size: 12px;
+    color: #c5c6c7;
+}
+
+#login-status.logged-in {
+    background: rgba(102, 252, 241, 0.14);
+    color: #66fcf1;
+}
+
+#login-status.login-failed {
+    background: rgba(255, 68, 68, 0.14);
+    color: #ff8585;
 }
 
 h1 {
