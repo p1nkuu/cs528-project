@@ -4,7 +4,7 @@ import re
 import math
 
 # --- Configuration ---
-SERIAL_PORT = '/dev/cu.usbserial-110' # CHANGE TO SERIAL PORT OF YOUR ESP32
+SERIAL_PORT = 'COM4' # CHANGE TO SERIAL PORT OF YOUR ESP32
 BAUD_RATE = 115200
 WIDTH, HEIGHT = 1000, 800 # size of canvas
 

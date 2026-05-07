@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Gesture Navigator</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Load Three.js and GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+    <div id="ui-container">
+        <div id="header">
+            <h1>3D Gesture Navigator</h1>
+            <p>Perform gestures to move the glowing point.</p>
+        </div>
+        <div id="status">
+            Last Action: <span id="last-action">waiting...</span>
+        </div>
+        <div id="logs-container">
+            <h3>Event Logs</h3>
+            <ul id="logs"></ul>
+        </div>
+        <div id="coordinates">
+            Pos: (<span id="x-coord">0</span>, <span id="y-coord">0</span>, <span id="z-coord">0</span>)
+        </div>
+    </div>
+    
+    <div id="canvas-container"></div>
+
+    <script src="main.js"></script>
+</body>
+</html>
