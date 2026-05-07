@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GESTURE SABER</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --neon-blue: #00f0ff;
+    --neon-pink: #ff006e;
+    --neon-yellow: #ffe600;
+    --neon-green: #00ff88;
+    --bg: #050510;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--neon-blue);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 35%;
+    background:
+      linear-gradient(transparent 0%, rgba(0,240,255,0.03) 100%),
+      repeating-linear-gradient(90deg, rgba(0,240,255,0.07) 0px, transparent 1px, transparent 60px, rgba(0,240,255,0.07) 61px),
+      repeating-linear-gradient(0deg, rgba(0,240,255,0.07) 0px, transparent 1px, transparent 40px, rgba(0,240,255,0.07) 41px);
+    pointer-events: none;
+    z-index: 0;
+    transform: perspective(400px) rotateX(35deg);
+    transform-origin: bottom;
+  }
+
+  canvas { position: absolute; inset: 0; z-index: 1; }
+
+  #ui { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+
+  #score-panel {
+    position: absolute;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+
+  #score-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: rgba(0,240,255,0.5);
+    margin-bottom: 4px;
+  }
+
+  #score {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 52px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 20px var(--neon-blue), 0 0 60px var(--neon-blue);
+    line-height: 1;
+  }
+
+  #combo-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 10px var(--neon-yellow);
+    margin-top: 4px;
+    min-height: 20px;
+  }
+
+  #left-panel { position: absolute; top: 20px; left: 20px; }
+  #right-panel { position: absolute; top: 20px; right: 20px; text-align: right; }
+
+  .stat-label { font-size: 9px; letter-spacing: 4px; color: rgba(0,240,255,0.4); margin-bottom: 2px; }
+  .stat-value { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; color: var(--neon-blue); text-shadow: 0 0 12px var(--neon-blue); }
+
+  #bpm-display {
+    position: absolute;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    margin-top: 90px;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: rgba(0,240,255,0.3);
+    text-align: center;
+  }
+
+  #gesture-display {
+    position: absolute;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #gesture-label { font-size: 10px; letter-spacing: 5px; color: rgba(255,0,110,0.6); }
+
+  #gesture-arrow {
+    font-size: 60px;
+    line-height: 1;
+    text-shadow: 0 0 30px currentColor;
+    transition: all 0.1s;
+    opacity: 0;
+  }
+
+  #gesture-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: var(--neon-pink);
+    text-shadow: 0 0 10px var(--neon-pink);
+    min-height: 20px;
+  }
+
+  #health-bar-container {
+    position: absolute;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    text-align: center;
+  }
+
+  #health-label { font-size: 9px; letter-spacing: 5px; color: rgba(0,240,255,0.4); margin-bottom: 6px; }
+
+  #health-track {
+    height: 6px;
+    background: rgba(0,240,255,0.1);
+    border: 1px solid rgba(0,240,255,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  #health-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+    border-radius: 3px;
+    transition: width 0.3s ease, background 0.5s ease;
+    box-shadow: 0 0 10px var(--neon-blue);
+  }
+
+  #conn-status {
+    position: absolute;
+    bottom: 20px; right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(0,240,255,0.4);
+  }
+
+  #conn-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #333;
+    transition: all 0.3s;
+  }
+
+  #conn-dot.connected { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+  #conn-dot.disconnected { background: var(--neon-pink); box-shadow: 0 0 8px var(--neon-pink); }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5,5,16,0.92);
+    z-index: 50;
+    pointer-events: all;
+    gap: 24px;
+  }
+
+  .screen.hidden { display: none; }
+
+  .screen-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(36px, 7vw, 80px);
+    font-weight: 900;
+    letter-spacing: 12px;
+    color: #fff;
+    text-shadow: 0 0 30px var(--neon-blue), 0 0 80px var(--neon-blue);
+    text-align: center;
+  }
+
+  .screen-title span {
+    color: var(--neon-pink);
+    text-shadow: 0 0 30px var(--neon-pink), 0 0 80px var(--neon-pink);
+  }
+
+  .screen-sub { font-size: 12px; letter-spacing: 6px; color: rgba(0,240,255,0.5); text-align: center; }
+
+  /* Drop zone */
+  #drop-zone {
+    width: 340px;
+    height: 120px;
+    border: 2px dashed rgba(0,240,255,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    clip-path: polygon(16px 0%, 100% 0%, calc(100% - 16px) 100%, 0% 100%);
+  }
+
+  #drop-zone:hover, #drop-zone.dragover {
+    border-color: var(--neon-blue);
+    background: rgba(0,240,255,0.05);
+    box-shadow: 0 0 30px rgba(0,240,255,0.2);
+  }
+
+  #drop-zone .drop-icon { font-size: 32px; }
+  #drop-zone .drop-text { font-size: 11px; letter-spacing: 4px; color: rgba(0,240,255,0.5); }
+  #drop-zone .drop-sub { font-size: 9px; letter-spacing: 3px; color: rgba(0,240,255,0.3); }
+
+  #file-input { display: none; }
+
+  #track-info {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--neon-green);
+    text-shadow: 0 0 10px var(--neon-green);
+    text-align: center;
+    min-height: 20px;
+  }
+
+  #bpm-info {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: rgba(0,240,255,0.5);
+    min-height: 18px;
+  }
+
+  #analyzing {
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 8px var(--neon-yellow);
+    animation: blink 0.8s infinite;
+    display: none;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    letter-spacing: 6px;
+    font-weight: 700;
+    padding: 16px 48px;
+    border: 2px solid var(--neon-blue);
+    background: transparent;
+    color: var(--neon-blue);
+    cursor: pointer;
+    pointer-events: all;
+    transition: all 0.2s;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+  }
+
+  .btn:hover {
+    background: rgba(0,240,255,0.1);
+    box-shadow: 0 0 30px rgba(0,240,255,0.5);
+    text-shadow: 0 0 10px var(--neon-blue);
+  }
+
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn-pink { border-color: var(--neon-pink); color: var(--neon-pink); }
+  .btn-pink:hover { background: rgba(255,0,110,0.1); box-shadow: 0 0 30px rgba(255,0,110,0.5); }
+
+  #diff-btns { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+
+  .diff-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    padding: 10px 28px;
+    border: 1px solid rgba(0,240,255,0.3);
+    background: transparent;
+    color: rgba(0,240,255,0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .diff-btn:hover, .diff-btn.active {
+    border-color: var(--neon-blue);
+    color: var(--neon-blue);
+    background: rgba(0,240,255,0.08);
+    box-shadow: 0 0 15px rgba(0,240,255,0.3);
+  }
+
+  #hit-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 5; transition: opacity 0.08s; }
+
+  #keyboard-hint {
+    position: absolute;
+    bottom: 20px; left: 20px;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(0,240,255,0.2);
+    line-height: 1.8;
+  }
+
+  #final-score { font-family: 'Orbitron', sans-serif; font-size: 64px; font-weight: 900; color: #fff; text-shadow: 0 0 30px var(--neon-yellow); }
+  #final-stats { font-size: 13px; letter-spacing: 3px; color: rgba(0,240,255,0.6); text-align: center; line-height: 2.2; white-space: pre; }
+
+  .streak-popup {
+    position: absolute;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    pointer-events: none;
+    z-index: 20;
+    animation: popFloat 0.9s ease-out forwards;
+  }
+
+  @keyframes popFloat {
+    0% { opacity: 1; transform: translateY(0) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-80px) scale(0.8); }
+  }
+
+  /* Beat pulse ring on hit zone */
+  .beat-ring {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 8;
+    animation: ringPulse 0.4s ease-out forwards;
+  }
+
+  @keyframes ringPulse {
+    0% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.5); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="hit-flash"></div>
+
+<div id="ui">
+  <div id="score-panel">
+    <div id="score-label">SCORE</div>
+    <div id="score">0</div>
+    <div id="combo-display"></div>
+  </div>
+
+  <div id="left-panel">
+    <div class="stat-label">LEVEL</div>
+    <div class="stat-value" id="level-val">1</div>
+  </div>
+
+  <div id="right-panel">
+    <div class="stat-label">STREAK</div>
+    <div class="stat-value" id="streak-val">0</div>
+  </div>
+
+  <div id="bpm-display"></div>
+
+  <div id="gesture-display">
+    <div id="gesture-label">LAST GESTURE</div>
+    <div id="gesture-arrow">⬆</div>
+    <div id="gesture-name"></div>
+  </div>
+
+  <div id="health-bar-container">
+    <div id="health-label">HEALTH</div>
+    <div id="health-track"><div id="health-fill"></div></div>
+  </div>
+
+  <div id="conn-status">
+    <div id="conn-dot"></div>
+    <span id="conn-text">CONNECTING</span>
+  </div>
+
+  <div id="keyboard-hint">
+    ↑ UP  ↓ DOWN  ← LEFT  → RIGHT<br>
+    W FORWARD  S BACKWARD<br>
+    [KEYBOARD FALLBACK]
+  </div>
+</div>
+
+<!-- Start Screen -->
+<div class="screen" id="start-screen">
+  <div class="screen-title">GESTURE<br><span>SABER</span></div>
+  <div class="screen-sub">SLASH BLOCKS WITH YOUR BODY</div>
+
+  <div id="drop-zone">
+    <div class="drop-icon">🎵</div>
+    <div class="drop-text">DROP MP3 HERE</div>
+    <div class="drop-sub">OR CLICK TO BROWSE</div>
+    <input type="file" id="file-input" accept="audio/*">
+  </div>
+
+  <div id="analyzing">ANALYZING BPM...</div>
+  <div id="track-info"></div>
+  <div id="bpm-info"></div>
+
+  <div id="diff-btns">
+    <button class="diff-btn active" data-diff="easy">EASY</button>
+    <button class="diff-btn" data-diff="normal">NORMAL</button>
+    <button class="diff-btn" data-diff="hard">HARD</button>
+    <button class="diff-btn" data-diff="expert">EXPERT</button>
+  </div>
+
+  <button class="btn" id="start-btn" disabled>LOAD A TRACK FIRST</button>
+</div>
+
+<!-- Game Over Screen -->
+<div class="screen hidden" id="gameover-screen">
+  <div class="screen-title"><span>GAME</span><br>OVER</div>
+  <div id="final-score">0</div>
+  <div id="final-stats"></div>
+  <button class="btn btn-pink" id="restart-btn">PLAY AGAIN</button>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+// ─── Difficulty modifiers (multipliers on top of BPM) ─────
+const DIFFICULTIES = {
+  easy:   { everyN: 4, health: 120 },  // spawn every 2nd beat
+  normal: { everyN: 2, health: 100 },  // every beat
+  hard:   { everyN: 1, health: 80, extraChance: 0.4 },  // every beat + 40% chance of an extra
+  expert: { everyN: 1, health: 60,  extraChance: 0.8 },
+};
+
+const DIRECTIONS = ['up','down','left','right','forward','backward'];
+const DIR_ARROWS = { up:'⬆', down:'⬇', left:'⬅', right:'➡', forward:'◉', backward:'◎' };
+const DIR_COLORS = {
+  up:'#00f0ff', down:'#ff006e', left:'#ffe600',
+  right:'#00ff88', forward:'#bf00ff', backward:'#ff6600',
+};
+
+// ─── Audio / BPM state ────────────────────────────────────
+let audioCtx = null;
+let audioBuffer = null;
+let audioSource = null;
+let audioStartTime = 0;
+let detectedBPM = 120;
+let trackName = '';
+let audioFile = null;
+
+// ─── Game state ───────────────────────────────────────────
+let state = {
+  running: false,
+  score: 0, streak: 0, maxStreak: 0,
+  health: 100, maxHealth: 100,
+  level: 1,
+  blocks: [], particles: [],
+  totalHit: 0, totalMissed: 0,
+  difficulty: 'easy',
+  beatInterval: 500,       // ms between beats
+  lastBeatTime: 0,         // performance.now() of last beat
+  beatCount: 0,
+};
+
+// ─── BPM Detection ───────────────────────────────────────
+async function analyzeBPM(buffer) {
+  // Offline render to mono at 22050 Hz for speed
+  const sampleRate = 22050;
+  const offlineCtx = new OfflineAudioContext(1, buffer.duration * sampleRate, sampleRate);
+  const src = offlineCtx.createBufferSource();
+  src.buffer = buffer;
+
+  // Low-pass to focus on kick/bass energy
+  const lp = offlineCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 150;
+
+  src.connect(lp);
+  lp.connect(offlineCtx.destination);
+  src.start(0);
+
+  const rendered = await offlineCtx.startRendering();
+  const data = rendered.getChannelData(0);
+
+  // Energy in 10ms windows
+  const winSize = Math.floor(sampleRate * 0.01);
+  const energies = [];
+  for (let i = 0; i < data.length - winSize; i += winSize) {
+    let e = 0;
+    for (let j = 0; j < winSize; j++) e += data[i+j] * data[i+j];
+    energies.push(e / winSize);
+  }
+
+  // Peak picking — onset when energy jumps above local average
+  const onsets = [];
+  const histLen = 43; // ~430ms local history
+  for (let i = histLen; i < energies.length; i++) {
+    let avg = 0;
+    for (let j = i - histLen; j < i; j++) avg += energies[j];
+    avg /= histLen;
+    if (energies[i] > avg * 1.5 && (onsets.length === 0 || i - onsets[onsets.length-1] > 8)) {
+      onsets.push(i);
+    }
+  }
+
+  if (onsets.length < 4) return 120; // fallback
+
+  // Inter-onset intervals → BPM
+  const iois = [];
+  for (let i = 1; i < onsets.length; i++) {
+    iois.push((onsets[i] - onsets[i-1]) * (1000 / (sampleRate / winSize)));
+  }
+
+  // Histogram of IOIs, find the most common
+  const bucketSize = 10; // 10ms buckets
+  const hist = {};
+  for (const ioi of iois) {
+    if (ioi < 200 || ioi > 2000) continue;
+    const bucket = Math.round(ioi / bucketSize) * bucketSize;
+    hist[bucket] = (hist[bucket] || 0) + 1;
+  }
+
+  let bestBucket = 500, bestCount = 0;
+  for (const [b, c] of Object.entries(hist)) {
+    if (c > bestCount) { bestCount = c; bestBucket = +b; }
+  }
+
+  let bpm = 60000 / bestBucket;
+
+  // Normalize to 60–180 BPM range
+  while (bpm < 60) bpm *= 2;
+  while (bpm > 180) bpm /= 2;
+
+  return Math.round(bpm);
+}
+
+// ─── Load audio file ─────────────────────────────────────
+async function loadAudioFile(file) {
+  audioFile = file;
+  trackName = file.name.replace(/\.[^.]+$/, '');
+
+  document.getElementById('analyzing').style.display = 'block';
+  document.getElementById('track-info').textContent = '';
+  document.getElementById('bpm-info').textContent = '';
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('start-btn').textContent = 'ANALYZING...';
+
+  try {
+    if (!audioCtx) audioCtx = new AudioContext();
+    const arrayBuffer = await file.arrayBuffer();
+    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    detectedBPM = await analyzeBPM(audioBuffer);
+
+    document.getElementById('analyzing').style.display = 'none';
+    document.getElementById('track-info').textContent = trackName.toUpperCase();
+    document.getElementById('bpm-info').textContent = `${detectedBPM} BPM DETECTED`;
+    document.getElementById('start-btn').disabled = false;
+    document.getElementById('start-btn').textContent = 'START GAME';
+  } catch(e) {
+    document.getElementById('analyzing').style.display = 'none';
+    document.getElementById('track-info').textContent = 'ERROR LOADING FILE';
+    console.error(e);
+  }
+}
+
+// ─── Blocks ───────────────────────────────────────────────
+function spawnBlock() {
+  const dir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+  const col = DIR_COLORS[dir];
+  const lane = Math.floor(Math.random() * 3);
+  const laneX = canvas.width * 0.3 + lane * canvas.width * 0.2;
+  state.blocks.push({ x: laneX, y: -80, dir, col, size: 64, pulse: 0, hit: false, miss: false });
+}
+
+function onBeat() {
+  if (!state.running) return;
+  const diff = DIFFICULTIES[state.difficulty];
+
+  // everyN: skip beats for easy mode
+  state.beatCount++;
+  if (state.beatCount % diff.everyN !== 0) return;
+
+  spawnBlock();
+  if (diff.extraChance && Math.random() < diff.extraChance) spawnBlock();
+
+  // Visual beat pulse on hit zone
+  const ring = document.createElement('div');
+  ring.className = 'beat-ring';
+  ring.style.cssText = `
+    left: 50%; top: ${canvas.height * 0.72}px;
+    width: 80px; height: 80px;
+    border: 2px solid rgba(0,240,255,0.4);
+  `;
+  document.getElementById('ui').appendChild(ring);
+  setTimeout(() => ring.remove(), 400);
+}
+
+function updateBlocks(dt) {
+  // Speed: blocks should arrive at hit zone in ~2 beats worth of time
+  const beatsToArrive = 8;
+  const pxPerMs = (canvas.height * 0.72 + 80) / (state.beatInterval * beatsToArrive);
+  const speed = pxPerMs * dt;
+  const hitZoneY = canvas.height * 0.72;
+
+  for (let i = state.blocks.length - 1; i >= 0; i--) {
+    const b = state.blocks[i];
+    b.y += speed;
+    b.pulse = (b.pulse + dt * 0.004) % (Math.PI * 2);
+
+    if (b.hit) {
+      b.size += dt * 0.15;
+      b.hitOpacity = (b.hitOpacity || 1) - dt * 0.004;
+      if (b.hitOpacity <= 0) state.blocks.splice(i, 1);
+      continue;
+    }
+
+    if (!b.miss && b.y > hitZoneY + 60) {
+      b.miss = true;
+      onMiss(b);
+    }
+
+    if (b.y > canvas.height + 100) state.blocks.splice(i, 1);
+  }
+}
+
+function drawBlocks() {
+  const hitZoneY = canvas.height * 0.72;
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,240,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([8, 16]);
+  ctx.beginPath();
+  ctx.moveTo(canvas.width * 0.15, hitZoneY);
+  ctx.lineTo(canvas.width * 0.85, hitZoneY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  for (const b of state.blocks) {
+    const alpha = b.hit ? (b.hitOpacity || 1) : 1;
+    const glow = Math.sin(b.pulse) * 0.3 + 0.7;
+    const size = b.size;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(b.x, b.y);
+
+    const grad = ctx.createRadialGradient(0,0,0,0,0,size);
+    grad.addColorStop(0, b.col + 'cc');
+    grad.addColorStop(0.4, b.col + '66');
+    grad.addColorStop(1, b.col + '00');
+    ctx.fillStyle = grad;
+    ctx.fillRect(-size, -size, size*2, size*2);
+
+    ctx.shadowColor = b.col;
+    ctx.shadowBlur = 20 * glow;
+    ctx.strokeStyle = b.col;
+    ctx.lineWidth = 2.5;
+    ctx.fillStyle = b.col + '22';
+
+    const s2 = size * 0.55;
+    ctx.beginPath();
+    ctx.moveTo(-s2+10, -s2); ctx.lineTo(s2, -s2);
+    ctx.lineTo(s2, s2-10); ctx.lineTo(s2-10, s2);
+    ctx.lineTo(-s2, s2); ctx.lineTo(-s2, -s2+10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.round(s2 * 0.85)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const arrows = { up:'↑', down:'↓', left:'←', right:'→', forward:'⊕', backward:'⊖' };
+    ctx.fillText(arrows[b.dir], 0, 2);
+
+    ctx.restore();
+  }
+}
+
+// ─── Particles ───────────────────────────────────────────
+function spawnParticles(x, y, col, count=18) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI*2*i/count) + Math.random()*0.4;
+    const spd = 2 + Math.random()*5;
+    state.particles.push({ x, y, vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd-2, col, life:1, size:3+Math.random()*5 });
+  }
+}
+
+function updateParticles(dt) {
+  for (let i = state.particles.length-1; i >= 0; i--) {
+    const p = state.particles[i];
+    p.x += p.vx * dt * 0.05;
+    p.y += p.vy * dt * 0.05;
+    p.vy += 0.08 * dt * 0.05;
+    p.life -= 0.025 * dt * 0.05;
+    if (p.life <= 0) state.particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  for (const p of state.particles) {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.col;
+    ctx.shadowColor = p.col;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size*p.life, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ─── Background ──────────────────────────────────────────
+function drawBackground() {
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (const lp of [0.3, 0.5, 0.7]) {
+    const x = canvas.width * lp;
+    const grad = ctx.createLinearGradient(x, 0, x, canvas.height);
+    grad.addColorStop(0, 'rgba(0,240,255,0)');
+    grad.addColorStop(0.5, 'rgba(0,240,255,0.04)');
+    grad.addColorStop(1, 'rgba(0,240,255,0)');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+}
+
+// ─── Game Logic ──────────────────────────────────────────
+function processGesture(dir) {
+  if (!state.running) return;
+
+  const arrow = document.getElementById('gesture-arrow');
+  const name = document.getElementById('gesture-name');
+  arrow.textContent = DIR_ARROWS[dir] || '?';
+  arrow.style.color = DIR_COLORS[dir] || '#fff';
+  arrow.style.opacity = '1';
+  name.textContent = dir.toUpperCase();
+  clearTimeout(arrow._timeout);
+  arrow._timeout = setTimeout(() => { arrow.style.opacity = '0.2'; }, 600);
+
+  const hitZoneY = canvas.height * 0.72;
+  let best = null, bestDist = 999;
+  for (const b of state.blocks) {
+    if (b.hit || b.miss) continue;
+    const dist = Math.abs(b.y - hitZoneY);
+    if (dist < 200 && dist < bestDist) { best = b; bestDist = dist; }
+  }
+
+  if (best && best.dir === dir) onHit(best);
+}
+
+function onHit(block) {
+  block.hit = true;
+  block.hitOpacity = 1;
+  state.streak++;
+  state.maxStreak = Math.max(state.maxStreak, state.streak);
+  state.totalHit++;
+
+  let mult = 1;
+  if (state.streak >= 20) mult = 4;
+  else if (state.streak >= 10) mult = 3;
+  else if (state.streak >= 5) mult = 2;
+
+  state.score += 100 * mult * state.level;
+  state.level = Math.floor(state.score / 2000) + 1;
+
+  spawnParticles(block.x, block.y, block.col, 22);
+  flashHit(block.col);
+
+  const combo = document.getElementById('combo-display');
+  if (state.streak >= 3) {
+    combo.textContent = `${state.streak}x COMBO!`;
+    combo.style.color = state.streak >= 10 ? 'var(--neon-pink)' : 'var(--neon-yellow)';
+  } else {
+    combo.textContent = '';
+  }
+
+  if ([5,10,20,50].includes(state.streak)) showStreakPopup(block.x, block.y, `${state.streak}× STREAK!`, block.col);
+  updateHUD();
+}
+
+function onMiss(block) {
+  state.streak = 0;
+  state.totalMissed++;
+  state.health = Math.max(0, state.health);
+  document.getElementById('combo-display').textContent = '';
+  flashHit('rgba(255,0,110,0.4)');
+  if (state.health <= 0) gameOver();
+  updateHUD();
+}
+
+function flashHit(color) {
+  const flash = document.getElementById('hit-flash');
+  flash.style.background = color;
+  flash.style.opacity = '0.25';
+  clearTimeout(flash._t);
+  flash._t = setTimeout(() => { flash.style.opacity = '0'; }, 100);
+}
+
+function showStreakPopup(x, y, text, col) {
+  const el = document.createElement('div');
+  el.className = 'streak-popup';
+  el.textContent = text;
+  el.style.cssText = `left:${x-80}px;top:${y-40}px;color:${col};text-shadow:0 0 20px ${col}`;
+  document.getElementById('ui').appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+function updateHUD() {
+  document.getElementById('score').textContent = state.score.toLocaleString();
+  document.getElementById('streak-val').textContent = state.streak;
+  document.getElementById('level-val').textContent = state.level;
+
+  const pct = (state.health / state.maxHealth) * 100;
+  const fill = document.getElementById('health-fill');
+  fill.style.width = pct + '%';
+  if (pct < 25) { fill.style.background = 'var(--neon-pink)'; fill.style.boxShadow = '0 0 10px var(--neon-pink)'; }
+  else if (pct < 50) { fill.style.background = 'var(--neon-yellow)'; fill.style.boxShadow = '0 0 10px var(--neon-yellow)'; }
+  else { fill.style.background = 'linear-gradient(90deg,var(--neon-blue),var(--neon-green))'; fill.style.boxShadow = '0 0 10px var(--neon-blue)'; }
+}
+
+// ─── Beat clock ──────────────────────────────────────────
+let beatTimer = null;
+
+function startBeatClock() {
+  const interval = 60000 / detectedBPM;
+  state.beatInterval = interval;
+
+  // Schedule beats using AudioContext time for accuracy
+  if (audioCtx) {
+    let nextBeat = audioCtx.currentTime + 0.1;
+    const scheduleAhead = 0.2; // seconds
+    const tick = 0.025;
+
+    function scheduler() {
+      while (nextBeat < audioCtx.currentTime + scheduleAhead) {
+        const msUntil = (nextBeat - audioCtx.currentTime) * 1000;
+        setTimeout(onBeat, msUntil);
+        nextBeat += interval / 1000;
+      }
+      beatTimer = setTimeout(scheduler, tick * 1000);
+    }
+    scheduler();
+  } else {
+    // Fallback: simple setInterval
+    beatTimer = setInterval(onBeat, interval);
+  }
+}
+
+function stopBeatClock() {
+  if (beatTimer) { clearTimeout(beatTimer); clearInterval(beatTimer); beatTimer = null; }
+}
+
+// ─── Main loop ───────────────────────────────────────────
+let lastTime = 0;
+function loop(ts) {
+  const dt = Math.min(ts - lastTime, 50);
+  lastTime = ts;
+
+  drawBackground();
+  if (state.running) {
+    updateBlocks(dt);
+    updateParticles(dt);
+  }
+  drawParticles();
+  drawBlocks();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ─── Game flow ───────────────────────────────────────────
+function startGame() {
+  if (!audioBuffer) return;
+
+  const diff = DIFFICULTIES[state.difficulty];
+  Object.assign(state, {
+    running: true,
+    score: 0, streak: 0, maxStreak: 0,
+    health: diff.health, maxHealth: diff.health,
+    level: 1, blocks: [], particles: [],
+    totalHit: 0, totalMissed: 0,
+    beatCount: 0,
+    beatInterval: 60000 / detectedBPM,
+  });
+
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('gameover-screen').classList.add('hidden');
+  document.getElementById('combo-display').textContent = '';
+  document.getElementById('bpm-display').textContent = `${detectedBPM} BPM · ${trackName.toUpperCase()}`;
+  updateHUD();
+  lastTime = performance.now();
+
+  // Resume AudioContext if suspended (browser autoplay policy)
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  // Play audio
+  if (audioSource) { try { audioSource.stop(); } catch(e) {} }
+  audioSource = audioCtx.createBufferSource();
+  audioSource.buffer = audioBuffer;
+  audioSource.connect(audioCtx.destination);
+  audioSource.start(0);
+  audioSource.onended = () => { if (state.running) gameOver(); };
+
+  startBeatClock();
+}
+
+function gameOver() {
+  state.running = false;
+  stopBeatClock();
+  if (audioSource) { try { audioSource.stop(); } catch(e) {} }
+  state.blocks = [];
+
+  const accuracy = state.totalHit + state.totalMissed > 0
+    ? Math.round(state.totalHit / (state.totalHit + state.totalMissed) * 100) : 0;
+
+  document.getElementById('final-score').textContent = state.score.toLocaleString();
+  document.getElementById('final-stats').textContent =
+    `ACCURACY: ${accuracy}%\nBEST STREAK: ${state.maxStreak}\nBLOCKS HIT: ${state.totalHit}\nBLOCKS MISSED: ${state.totalMissed}`;
+  document.getElementById('gameover-screen').classList.remove('hidden');
+  document.getElementById('bpm-display').textContent = '';
+}
+
+// ─── UI Handlers ─────────────────────────────────────────
+document.getElementById('start-btn').addEventListener('click', startGame);
+
+document.getElementById('restart-btn').addEventListener('click', () => {
+  document.getElementById('gameover-screen').classList.add('hidden');
+  startGame();
+});
+
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.difficulty = btn.dataset.diff;
+  });
+});
+
+// Drop zone
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadAudioFile(e.target.files[0]); });
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('audio/')) loadAudioFile(file);
+});
+
+// Keyboard fallback
+document.addEventListener('keydown', e => {
+  const map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right', w:'forward', W:'forward', s:'backward', S:'backward' };
+  if (map[e.key]) { e.preventDefault(); processGesture(map[e.key]); }
+  if (e.key === 'Enter' && !state.running && audioBuffer) startGame();
+});
+
+// ─── SSE ─────────────────────────────────────────────────
+const dot = document.getElementById('conn-dot');
+const connText = document.getElementById('conn-text');
+
+function connect() {
+  const sse = new EventSource('/events');
+  sse.onopen = () => { dot.className = 'connected'; connText.textContent = 'CONNECTED'; };
+  sse.onmessage = e => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.action && data.action !== 'ping') processGesture(data.action);
+    } catch {}
+  };
+  sse.onerror = () => {
+    dot.className = 'disconnected';
+    connText.textContent = 'DISCONNECTED';
+    sse.close();
+    setTimeout(connect, 3000);
+  };
+}
+connect();
+</script>
+</body>
+</html>
