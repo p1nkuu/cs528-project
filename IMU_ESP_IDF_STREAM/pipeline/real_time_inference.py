@@ -7,11 +7,11 @@ import requests
 from collections import deque, Counter
 from features import extract_features_from_array
 
-SERIAL_PORT = 'COM4'
+SERIAL_PORT = 'COM5'
 BAUD_RATE = 115200
-WINDOW_SIZE = 100
+WINDOW_SIZE = 50
 OVERLAP = 99
-VOTE_COUNT = 100
+VOTE_COUNT = 50
 UI_SERVER_URL = "http://localhost:8000/predict"
 
 def main():

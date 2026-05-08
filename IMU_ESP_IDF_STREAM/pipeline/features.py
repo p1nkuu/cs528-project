@@ -1,6 +1,6 @@
 import numpy as np
 
-def get_active_window(data_array, window_size=100):
+def get_active_window(data_array, window_size=50):
     if len(data_array) <= window_size:
         return data_array
         
