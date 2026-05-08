@@ -4,6 +4,8 @@ import numpy as np
 import joblib
 import time
 import requests
+import csv
+import os
 from collections import deque, Counter
 from features import extract_features_from_array
 
@@ -18,6 +20,10 @@ def main():
     scaler = joblib.load('models/scaler.joblib')
     svm_model = joblib.load('models/classifier.joblib')
 
+    # CSV file for predictions
+    csv_file = 'predictions.csv'
+    file_exists = os.path.isfile(csv_file)
+    
     pattern = re.compile(
         r'AX:([-\d.]+)\s+AY:([-\d.]+)\s+AZ:([-\d.]+)\s+\|\s+'
         r'GX:([-\d.]+)\s+GY:([-\d.]+)\s+GZ:([-\d.]+)\s+\|\s+'
@@ -52,7 +58,15 @@ def main():
                     
                     if len(prediction_history) == VOTE_COUNT:
                         most_common = Counter(prediction_history).most_common(1)[0][0]
-                        print(f"[{time.strftime('%H:%M:%S')}] Detected Gesture: {most_common}")
+                        timestamp = time.strftime('%H:%M:%S')
+                        print(f"[{timestamp}] Detected Gesture: {most_common}")
+                        
+                        # Write to CSV file
+                        with open(csv_file, 'a', newline='') as f:
+                            writer = csv.writer(f)
+                            if not file_exists:
+                                writer.writerow(['gesture'])
+                            writer.writerow([most_common])
                         
                         # Send to UI if running
                         try:
