@@ -2,6 +2,7 @@ build
 pipeline/data
 .vscode
 IMU_ESP_IDF_STREAM/build
+IMU_ESP_IDF_STREAM/venv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
