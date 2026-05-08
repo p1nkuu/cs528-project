@@ -17,7 +17,7 @@ body {
 
 #ui-container {
     position: absolute;
-    top: 20px;
+    top: 50px;
     left: 20px;
     z-index: 10;
     pointer-events: none;
@@ -98,4 +98,57 @@ h3 {
 @keyframes textFlash {
     0% { color: #fff; text-shadow: 0 0 10px #fff; }
     100% { color: #66fcf1; text-shadow: none; }
+}
+
+/* Progress Bar Styling */
+#progress-bar-container {
+    width: 100%;
+    height: 40px;
+    display: flex;
+    gap: 2px;
+    background: rgba(31, 40, 51, 0.5);
+    padding: 5px;
+    box-sizing: border-box;
+    box-shadow: inset 0 2px 8px rgba(69, 162, 158, 0.2);
+    border-radius: 5px;
+    border: 1px solid rgba(69, 162, 158, 0.3);
+    margin-top: 15px;
+    align-items: center;
+}
+
+.progress-segment {
+    flex: 1;
+    height: 30px;
+    background: linear-gradient(90deg, #1f2833, #16213e);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #0f3d3d;
+    transition: all 0.3s ease;
+    min-width: 10px;
+}
+
+.progress-segment.active {
+    background: linear-gradient(90deg, #45a29e, #66fcf1);
+    box-shadow: 0 0 12px rgba(102, 252, 241, 0.6), inset 0 0 8px rgba(69, 162, 158, 0.4);
+    border-color: #66fcf1;
+    animation: segmentGlow 0.6s ease-in-out;
+}
+
+.progress-segment.completed {
+    background: linear-gradient(90deg, #45a29e 0%, #66fcf1 100%);
+    box-shadow: 0 0 8px rgba(69, 162, 158, 0.5);
+    border-color: #45a29e;
+}
+
+@keyframes segmentGlow {
+    0% {
+        box-shadow: 0 0 0 rgba(102, 252, 241, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(102, 252, 241, 0.8), inset 0 0 12px rgba(69, 162, 158, 0.6);
+    }
+    100% {
+        box-shadow: 0 0 12px rgba(102, 252, 241, 0.6), inset 0 0 8px rgba(69, 162, 158, 0.4);
+    }
 }

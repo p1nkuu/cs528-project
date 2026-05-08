@@ -1,3 +1,20 @@
+let currentProgressStep = 0;
+const maxProgressSteps = 6;
+
+function updateProgressBar(step) {
+    currentProgressStep = Math.min(step, maxProgressSteps);
+    const segments = document.querySelectorAll('.progress-segment');
+    segments.forEach((segment, index) => {
+        segment.classList.remove('active');
+        segment.classList.remove('completed');
+        if (index < currentProgressStep - 1) {
+            segment.classList.add('completed');
+        } else if (index === currentProgressStep - 1) {
+            segment.classList.add('active');
+        }
+    });
+}
+
 // Scene Setup
 const scene = new THREE.Scene();
 
@@ -117,11 +134,14 @@ function handleAction(action) {
     let moved = false;
     let target = { x: gridPos.x, y: gridPos.y, z: gridPos.z };
 
+    // Normalize action to lowercase for comparison
+    const normalizedAction = action.toLowerCase().trim();
+
     // Map actions to grid coordinates
     // Up/Down = Y axis
     // Right/Left = X axis
     // Forward/Backward = Z axis
-    switch(action) {
+    switch(normalizedAction) {
         case 'up':
             if(target.y < 1) { target.y += 2; moved = true; }
             break;
@@ -147,6 +167,10 @@ function handleAction(action) {
             return;
     }
 
+    if (currentProgressStep < 6) {
+        updateProgressBar(currentProgressStep + 1);
+    }
+
     if(moved) {
         // Update state
         gridPos = target;
@@ -161,24 +185,24 @@ function handleAction(action) {
         });
 
         // UI Updates
-        updateUI(action);
-        logEvent(`Moved ${action.toUpperCase()}`);
+        updateUI(normalizedAction);
+        logEvent(`Moved ${normalizedAction.toUpperCase()}`);
         
         // Flash cube edges on success
         flashEdges(0x66fcf1);
     } else {
         // Hit boundary
-        logEvent(`Blocked: ${action.toUpperCase()} (Boundary hit)`);
+        logEvent(`Blocked: ${normalizedAction.toUpperCase()} (Boundary hit)`);
         flashEdges(0xff4444); // Red flash for block
         
         // Small jiggle animation to indicate failure
         let dir = { x: 0, y: 0, z: 0 };
-        if(action === 'up') dir.y = 0.2;
-        if(action === 'down') dir.y = -0.2;
-        if(action === 'right') dir.x = 0.2;
-        if(action === 'left') dir.x = -0.2;
-        if(action === 'forward') dir.z = -0.2;
-        if(action === 'backward') dir.z = 0.2;
+        if(normalizedAction === 'up') dir.y = 0.2;
+        if(normalizedAction === 'down') dir.y = -0.2;
+        if(normalizedAction === 'right') dir.x = 0.2;
+        if(normalizedAction === 'left') dir.x = -0.2;
+        if(normalizedAction === 'forward') dir.z = -0.2;
+        if(normalizedAction === 'backward') dir.z = 0.2;
 
         gsap.to(cursor.position, {
             x: gridPos.x + dir.x,

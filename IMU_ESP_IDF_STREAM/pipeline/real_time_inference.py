@@ -7,7 +7,7 @@ import requests
 from collections import deque, Counter
 from features import extract_features_from_array
 
-SERIAL_PORT = 'COM4'
+SERIAL_PORT = 'COM5'
 BAUD_RATE = 115200
 WINDOW_SIZE = 100
 OVERLAP = 99
