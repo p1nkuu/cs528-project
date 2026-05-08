@@ -9,7 +9,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 from features import extract_features_from_df
 
-DATA_DIR = 'data/tung'
+DATA_DIR = 'data/final'
 GESTURES = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'FORWARD', 'BACKWARD']
 
 def load_data():

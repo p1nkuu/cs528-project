@@ -4,11 +4,11 @@ import csv
 from datetime import datetime
 import os
 
-SERIAL_PORT = 'COM4' 
+SERIAL_PORT = 'COM5' 
 BAUD_RATE = 115200
-OUTPUT_DIR = 'data/tung/backward'
-FILE_PREFIX = 'BACKWARD'
-RECORD_DURATION = 1.0
+OUTPUT_DIR = 'data/final/left'
+FILE_PREFIX = 'left'
+RECORD_DURATION = 0.5
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 

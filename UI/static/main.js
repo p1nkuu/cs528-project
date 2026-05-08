@@ -142,6 +142,8 @@ const AUTH_MODE = {
 let authMode = AUTH_MODE.UNLOCK;
 let isCapturing = false;
 let capturedSequence = [];
+let captureStartingPoint = null;
+let activeHighlights = [];
 
 function setLoginStatus(message, state = '') {
     loginStatus.classList.remove('logged-in', 'login-failed');
@@ -201,6 +203,7 @@ function clearAttemptState() {
     capturedSequence = [];
     trailPoints.length = 0;
     trailPoints.push(new THREE.Vector3(gridPos.x, gridPos.y, gridPos.z));
+    captureStartingPoint = null;
     updateTrail();
     renderCapturedSequence();
     primaryActionButton.disabled = false;
@@ -216,7 +219,9 @@ function startCapture() {
 
     capturedSequence = [];
     trailPoints.length = 0;
-    trailPoints.push(new THREE.Vector3(gridPos.x, gridPos.y, gridPos.z));
+    // Record the starting grid position for this capture
+    captureStartingPoint = { x: gridPos.x, y: gridPos.y, z: gridPos.z };
+    trailPoints.push(new THREE.Vector3(captureStartingPoint.x, captureStartingPoint.y, captureStartingPoint.z));
     updateTrail();
     renderCapturedSequence();
     isCapturing = true;
@@ -235,20 +240,61 @@ function completeCapture() {
     primaryActionButton.disabled = false;
     primaryActionButton.innerText = authMode === AUTH_MODE.CREATE ? 'Begin Creation' : 'Start Unlock';
 
-    if (authMode === AUTH_MODE.CREATE) {
-        saveCapturedPassword();
-    } else {
-        verifyCapturedPassword();
+    // After capture completes, fade out and remove all active edge highlights,
+    // then proceed to save/verify. If no highlights are present, proceed immediately.
+    function proceed() {
+        if (authMode === AUTH_MODE.CREATE) {
+            saveCapturedPassword();
+        } else {
+            verifyCapturedPassword();
+        }
     }
+
+    if (activeHighlights.length === 0) {
+        proceed();
+        return;
+    }
+
+    let remaining = activeHighlights.length;
+    activeHighlights.forEach((item) => {
+        try {
+            gsap.to(item.mat, {
+                opacity: 0,
+                duration: 0.6,
+                ease: 'power1.out',
+                onComplete: () => {
+                    try {
+                        scene.remove(item.edge);
+                        item.geo.dispose();
+                        item.mat.dispose();
+                    } catch (e) { /* ignore */ }
+                    remaining -= 1;
+                    if (remaining === 0) {
+                        activeHighlights = [];
+                        proceed();
+                    }
+                }
+            });
+        } catch (e) {
+            // ignore and decrement
+            remaining -= 1;
+            if (remaining === 0) {
+                activeHighlights = [];
+                proceed();
+            }
+        }
+    });
 }
 
 async function saveCapturedPassword() {
     const name = passwordNameInput.value.trim();
     try {
+        const startingToSend = captureStartingPoint ?? (trailPoints.length ? { x: trailPoints[0].x, y: trailPoints[0].y, z: trailPoints[0].z } : { x: gridPos.x, y: gridPos.y, z: gridPos.z });
+
         const response = await fetch('/passwords/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, sequence: capturedSequence }),
+            body: JSON.stringify({ name, sequence: capturedSequence, starting_point: startingToSend }),
         });
         const payload = await response.json();
 
@@ -272,10 +318,12 @@ async function saveCapturedPassword() {
 
 async function verifyCapturedPassword() {
     try {
+        const startingToSend = captureStartingPoint ?? (trailPoints.length ? { x: trailPoints[0].x, y: trailPoints[0].y, z: trailPoints[0].z } : { x: gridPos.x, y: gridPos.y, z: gridPos.z });
+
         const response = await fetch('/passwords/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sequence: capturedSequence }),
+            body: JSON.stringify({ sequence: capturedSequence, starting_point: startingToSend }),
         });
         const payload = await response.json();
 
@@ -402,6 +450,22 @@ function handleAction(action) {
             renderCapturedSequence();
             trailPoints.push(new THREE.Vector3(gridPos.x, gridPos.y, gridPos.z));
             updateTrail();
+
+            // Highlight the edge that was just traversed while capturing
+            try {
+                const from = new THREE.Vector3(previousPosition.x, previousPosition.y, previousPosition.z);
+                const to = new THREE.Vector3(gridPos.x, gridPos.y, gridPos.z);
+                const edgeGeo = new THREE.BufferGeometry().setFromPoints([from, to]);
+                // Use red for capture highlight and keep visible until capture completes
+                const edgeMat = new THREE.LineBasicMaterial({ color: 0xff4444, transparent: true, opacity: 1, linewidth: 4 });
+                const highlightEdge = new THREE.Line(edgeGeo, edgeMat);
+                scene.add(highlightEdge);
+                // Keep track so we can remove them after 6 moves
+                activeHighlights.push({ edge: highlightEdge, geo: edgeGeo, mat: edgeMat });
+            } catch (e) {
+                // If three.js objects fail for any reason, ignore to avoid breaking capture
+                console.warn('Edge highlight failed', e);
+            }
 
             if (capturedSequence.length === PASSWORD_LENGTH) {
                 recordingStatus.innerText = 'Status: validating password';
