@@ -125,6 +125,7 @@ const AUTH_MODE = {
 let authMode = AUTH_MODE.UNLOCK;
 let isCapturing = false;
 let capturedSequence = [];
+let captureStartingPoint = null;
 
 function setLoginStatus(message, state = '') {
     loginStatus.classList.remove('logged-in', 'login-failed');
@@ -184,6 +185,7 @@ function clearAttemptState() {
     capturedSequence = [];
     trailPoints.length = 0;
     trailPoints.push(new THREE.Vector3(gridPos.x, gridPos.y, gridPos.z));
+    captureStartingPoint = null;
     updateTrail();
     renderCapturedSequence();
     primaryActionButton.disabled = false;
@@ -199,7 +201,9 @@ function startCapture() {
 
     capturedSequence = [];
     trailPoints.length = 0;
-    trailPoints.push(new THREE.Vector3(gridPos.x, gridPos.y, gridPos.z));
+    // Record the starting grid position for this capture
+    captureStartingPoint = { x: gridPos.x, y: gridPos.y, z: gridPos.z };
+    trailPoints.push(new THREE.Vector3(captureStartingPoint.x, captureStartingPoint.y, captureStartingPoint.z));
     updateTrail();
     renderCapturedSequence();
     isCapturing = true;
@@ -228,10 +232,12 @@ function completeCapture() {
 async function saveCapturedPassword() {
     const name = passwordNameInput.value.trim();
     try {
+        const startingToSend = captureStartingPoint ?? (trailPoints.length ? { x: trailPoints[0].x, y: trailPoints[0].y, z: trailPoints[0].z } : { x: gridPos.x, y: gridPos.y, z: gridPos.z });
+
         const response = await fetch('/passwords/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, sequence: capturedSequence }),
+            body: JSON.stringify({ name, sequence: capturedSequence, starting_point: startingToSend }),
         });
         const payload = await response.json();
 
@@ -255,10 +261,12 @@ async function saveCapturedPassword() {
 
 async function verifyCapturedPassword() {
     try {
+        const startingToSend = captureStartingPoint ?? (trailPoints.length ? { x: trailPoints[0].x, y: trailPoints[0].y, z: trailPoints[0].z } : { x: gridPos.x, y: gridPos.y, z: gridPos.z });
+
         const response = await fetch('/passwords/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sequence: capturedSequence }),
+            body: JSON.stringify({ sequence: capturedSequence, starting_point: startingToSend }),
         });
         const payload = await response.json();
 

@@ -1,10 +1,11 @@
 import json
 import os
 from datetime import datetime
+from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -54,13 +55,21 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
+class StartingPoint(BaseModel):
+    x: int
+    y: int
+    z: int
+
+
 class PasswordSaveRequest(BaseModel):
     name: str
     sequence: list[str]
+    starting_point: Optional[StartingPoint] = None
 
 
 class PasswordVerifyRequest(BaseModel):
     sequence: list[str]
+    starting_point: Optional[StartingPoint] = None
 
 @app.get("/")
 def read_root():
@@ -92,6 +101,14 @@ async def post_predict(req: ActionRequest):
 async def save_password(req: PasswordSaveRequest):
     normalized_name = req.name.strip()
     normalized_sequence = [item.strip().lower() for item in req.sequence if item.strip()]
+    if req.starting_point is None:
+        return JSONResponse(status_code=400, content={"status": "error", "message": "starting_point is required."})
+
+    starting_point = {
+        "x": int(req.starting_point.x),
+        "y": int(req.starting_point.y),
+        "z": int(req.starting_point.z),
+    }
 
     if not normalized_name:
         return {"status": "error", "message": "Password name is required."}
@@ -105,6 +122,7 @@ async def save_password(req: PasswordSaveRequest):
     entry = {
         "name": normalized_name,
         "sequence": normalized_sequence,
+        "starting_point": starting_point,
         "created_at": datetime.utcnow().isoformat() + "Z",
     }
     saved_passwords.append(entry)
@@ -125,6 +143,14 @@ async def list_passwords():
 @app.post("/passwords/verify")
 async def verify_password(req: PasswordVerifyRequest):
     normalized_sequence = [item.strip().lower() for item in req.sequence if item.strip()]
+    if req.starting_point is None:
+        return JSONResponse(status_code=400, content={"status": "error", "message": "starting_point is required for verification."})
+
+    incoming_start = {
+        "x": int(req.starting_point.x),
+        "y": int(req.starting_point.y),
+        "z": int(req.starting_point.z),
+    }
 
     if len(normalized_sequence) != 6:
         return {"status": "error", "message": "Password sequence must contain exactly 6 moves."}
@@ -133,12 +159,25 @@ async def verify_password(req: PasswordVerifyRequest):
         saved_passwords = json.load(file_handle)
 
     for saved_password in saved_passwords:
-        if [step.strip().lower() for step in saved_password.get("sequence", [])] == normalized_sequence:
-            return {
-                "status": "ok",
-                "matched": True,
-                "user_name": saved_password.get("name", "User"),
-            }
+        saved_seq = [step.strip().lower() for step in saved_password.get("sequence", [])]
+        saved_start = saved_password.get("starting_point")
+
+        # Only match if both sequence and starting point are present and equal.
+        if saved_seq == normalized_sequence and saved_start is not None:
+            try:
+                if (
+                    int(saved_start.get("x")) == incoming_start["x"] and
+                    int(saved_start.get("y")) == incoming_start["y"] and
+                    int(saved_start.get("z")) == incoming_start["z"]
+                ):
+                    return {
+                        "status": "ok",
+                        "matched": True,
+                        "user_name": saved_password.get("name", "User"),
+                    }
+            except Exception:
+                # If saved_start is malformed, skip this entry
+                continue
 
     return {"status": "ok", "matched": False}
 
