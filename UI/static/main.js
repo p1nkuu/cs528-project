@@ -70,6 +70,15 @@ const cursorGeo = new THREE.SphereGeometry(0.15, 32, 32);
 const cursorMat = new THREE.MeshBasicMaterial({ color: 0x66fcf1 });
 const cursor = new THREE.Mesh(cursorGeo, cursorMat);
 
+const trailMaterial = new THREE.LineBasicMaterial({
+    color: 0x66fcf1,
+    transparent: true,
+    opacity: 0.9,
+});
+const trailGeometry = new THREE.BufferGeometry().setFromPoints([]);
+const passwordTrail = new THREE.Line(trailGeometry, trailMaterial);
+scene.add(passwordTrail);
+
 // Add a glowing halo effect
 const haloGeo = new THREE.SphereGeometry(0.25, 32, 32);
 const haloMat = new THREE.MeshBasicMaterial({ 
@@ -83,6 +92,8 @@ scene.add(cursor);
 
 // State tracking (logical grid from -1 to 1)
 let gridPos = { x: -1, y: -1, z: 1 }; // Start at front-bottom-left
+const PASSWORD_LENGTH = 6;
+let trailPoints = [];
 
 // Initial positioning
 cursor.position.set(gridPos.x, gridPos.y, gridPos.z);
@@ -112,6 +123,216 @@ animate();
 // WebSocket Connection
 const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/subscriber`);
+
+const modeBanner = document.getElementById('mode-banner');
+const authTitle = document.getElementById('auth-title');
+const passwordNameInput = document.getElementById('password-name');
+const primaryActionButton = document.getElementById('primary-action');
+const secondaryActionButton = document.getElementById('secondary-action');
+const recordingStatus = document.getElementById('recording-status');
+const sequenceSlots = document.getElementById('sequence-slots');
+const savedStatus = document.getElementById('saved-status');
+const loginStatus = document.getElementById('login-status');
+
+const AUTH_MODE = {
+    UNLOCK: 'unlock',
+    CREATE: 'create',
+};
+
+let authMode = AUTH_MODE.UNLOCK;
+let isCapturing = false;
+let capturedSequence = [];
+
+function setLoginStatus(message, state = '') {
+    loginStatus.classList.remove('logged-in', 'login-failed');
+    if (state) {
+        loginStatus.classList.add(state);
+    }
+    loginStatus.innerText = message;
+}
+
+function setMode(mode) {
+    authMode = mode;
+    const isCreateMode = mode === AUTH_MODE.CREATE;
+
+    passwordNameInput.style.display = isCreateMode ? 'block' : 'none';
+    passwordNameInput.value = isCreateMode ? passwordNameInput.value : '';
+    authTitle.innerText = isCreateMode ? 'Create New Password' : 'Unlock Device';
+    modeBanner.innerText = isCreateMode ? 'Guided password creation' : 'Lock screen ready';
+    recordingStatus.innerText = isCreateMode
+        ? 'Status: name the password, then record 6 gestures'
+        : 'Status: enter your password to unlock';
+    primaryActionButton.innerText = isCreateMode ? 'Begin Creation' : 'Start Unlock';
+    secondaryActionButton.innerText = isCreateMode ? 'Back to Unlock' : 'Create New Password';
+}
+
+function buildPasswordSlots() {
+    sequenceSlots.innerHTML = '';
+    for (let index = 0; index < PASSWORD_LENGTH; index += 1) {
+        const slot = document.createElement('div');
+        slot.className = 'sequence-slot';
+        slot.innerText = String(index + 1);
+        sequenceSlots.appendChild(slot);
+    }
+}
+
+function renderCapturedSequence() {
+    const slots = Array.from(sequenceSlots.children);
+    slots.forEach((slot, index) => {
+        slot.classList.remove('filled', 'locked');
+        slot.innerText = index < capturedSequence.length ? capturedSequence[index].toUpperCase() : String(index + 1);
+        if (index < capturedSequence.length) {
+            slot.classList.add('filled');
+        }
+    });
+
+    if (capturedSequence.length === PASSWORD_LENGTH) {
+        slots.forEach((slot) => slot.classList.add('locked'));
+    }
+}
+
+function updateTrail() {
+    passwordTrail.geometry.dispose();
+    passwordTrail.geometry = new THREE.BufferGeometry().setFromPoints(trailPoints);
+}
+
+function clearAttemptState() {
+    isCapturing = false;
+    capturedSequence = [];
+    trailPoints.length = 0;
+    trailPoints.push(new THREE.Vector3(gridPos.x, gridPos.y, gridPos.z));
+    updateTrail();
+    renderCapturedSequence();
+    primaryActionButton.disabled = false;
+    secondaryActionButton.disabled = false;
+    primaryActionButton.innerText = authMode === AUTH_MODE.CREATE ? 'Begin Creation' : 'Start Unlock';
+}
+
+function startCapture() {
+    if (authMode === AUTH_MODE.CREATE && !passwordNameInput.value.trim()) {
+        savedStatus.innerText = 'Enter a password name first.';
+        return;
+    }
+
+    capturedSequence = [];
+    trailPoints.length = 0;
+    trailPoints.push(new THREE.Vector3(gridPos.x, gridPos.y, gridPos.z));
+    updateTrail();
+    renderCapturedSequence();
+    isCapturing = true;
+    primaryActionButton.disabled = true;
+    secondaryActionButton.disabled = true;
+    primaryActionButton.innerText = 'Recording...';
+    savedStatus.innerText = authMode === AUTH_MODE.CREATE
+        ? 'Move 6 gestures to save the new password.'
+        : 'Move 6 gestures to unlock.';
+    setLoginStatus('Not logged in');
+    logEvent(authMode === AUTH_MODE.CREATE ? 'Password creation started' : 'Unlock attempt started');
+}
+
+function completeCapture() {
+    isCapturing = false;
+    primaryActionButton.disabled = false;
+    primaryActionButton.innerText = authMode === AUTH_MODE.CREATE ? 'Begin Creation' : 'Start Unlock';
+
+    if (authMode === AUTH_MODE.CREATE) {
+        saveCapturedPassword();
+    } else {
+        verifyCapturedPassword();
+    }
+}
+
+async function saveCapturedPassword() {
+    const name = passwordNameInput.value.trim();
+    try {
+        const response = await fetch('/passwords/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, sequence: capturedSequence }),
+        });
+        const payload = await response.json();
+
+        if (payload.status === 'ok') {
+            savedStatus.innerText = `Saved "${payload.saved.name}" to the computer.`;
+            logEvent(`Password saved: ${payload.saved.name}`);
+            setMode(AUTH_MODE.UNLOCK);
+            isCapturing = false;
+            primaryActionButton.disabled = false;
+            primaryActionButton.innerText = 'Start Unlock';
+        } else {
+            savedStatus.innerText = payload.message || 'Could not save password.';
+            clearAttemptState();
+        }
+    } catch (error) {
+        savedStatus.innerText = 'Save failed. Check that the backend is running.';
+        logEvent('Password save failed', true);
+        clearAttemptState();
+    }
+}
+
+async function verifyCapturedPassword() {
+    try {
+        const response = await fetch('/passwords/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sequence: capturedSequence }),
+        });
+        const payload = await response.json();
+
+        if (payload.status === 'ok' && payload.matched) {
+            const userName = payload.user_name || 'User';
+            setLoginStatus(`Logged in as ${userName}`, 'logged-in');
+            savedStatus.innerText = 'Access granted.';
+            logEvent(`Logged in as ${userName}`);
+            isCapturing = false;
+            primaryActionButton.disabled = false;
+            primaryActionButton.innerText = 'Start Unlock';
+            return;
+        }
+
+        setLoginStatus('Login failed. Try again.', 'login-failed');
+        savedStatus.innerText = 'That password did not match. Try again.';
+        logEvent('Unlock failed', true);
+        clearAttemptState();
+    } catch (error) {
+        setLoginStatus('Login failed. Try again.', 'login-failed');
+        savedStatus.innerText = 'Unable to verify password. Check the backend.';
+        logEvent('Password verification failed', true);
+        clearAttemptState();
+    }
+}
+
+buildPasswordSlots();
+setMode(AUTH_MODE.UNLOCK);
+
+primaryActionButton.addEventListener('click', () => {
+    if (!isCapturing) {
+        startCapture();
+    }
+});
+
+secondaryActionButton.addEventListener('click', () => {
+    if (authMode === AUTH_MODE.CREATE) {
+        setMode(AUTH_MODE.UNLOCK);
+        clearAttemptState();
+        savedStatus.innerText = 'Ready to unlock.';
+    } else {
+        setMode(AUTH_MODE.CREATE);
+        clearAttemptState();
+        passwordNameInput.focus();
+        savedStatus.innerText = 'Enter a password name, then begin creation.';
+    }
+});
+
+passwordNameInput.addEventListener('input', () => {
+    if (authMode === AUTH_MODE.CREATE) {
+        savedStatus.innerText = passwordNameInput.value.trim()
+            ? 'Name set. Press Begin Creation when ready.'
+            : 'Enter a password name first.';
+    }
+});
+
+renderCapturedSequence();
 
 ws.onopen = () => {
     console.log("WebSocket connected.");
@@ -173,7 +394,21 @@ function handleAction(action) {
 
     if(moved) {
         // Update state
+        const previousPosition = { ...gridPos };
         gridPos = target;
+
+        if (isCapturing && capturedSequence.length < PASSWORD_LENGTH) {
+            capturedSequence.push(action);
+            renderCapturedSequence();
+            trailPoints.push(new THREE.Vector3(gridPos.x, gridPos.y, gridPos.z));
+            updateTrail();
+
+            if (capturedSequence.length === PASSWORD_LENGTH) {
+                recordingStatus.innerText = 'Status: validating password';
+                logEvent('Password input reached 6 gestures');
+                completeCapture();
+            }
+        }
         
         // Animate movement using GSAP
         gsap.to(cursor.position, {

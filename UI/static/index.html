@@ -13,12 +13,28 @@
 <body>
     <div id="ui-container">
         <div id="header">
-            <h1>3D Gesture Navigator</h1>
-            <p>Perform gestures to move the glowing point.</p>
+            <h1>3D Gesture Lock</h1>
+            <p>Use your six-gesture password to unlock. Create a new password only when needed.</p>
+        </div>
+        <div id="mode-banner">Lock screen ready</div>
+        <div id="auth-panel">
+            <h3 id="auth-title">Unlock Device</h3>
+            <input id="password-name" type="text" placeholder="Name for new password" />
+            <div class="button-row">
+                <button id="primary-action">Start Unlock</button>
+            </div>
+            <button id="secondary-action" class="link-button" type="button">Create New Password</button>
+            <div id="recording-status">Status: enter your password to unlock</div>
+            <div id="sequence-preview">
+                <div class="sequence-label">Password Input</div>
+                <div id="sequence-slots" aria-label="Six character password input"></div>
+            </div>
+            <div id="saved-status"></div>
         </div>
         <div id="status">
             Last Action: <span id="last-action">waiting...</span>
         </div>
+        <div id="login-status">Not logged in</div>
         <div id="logs-container">
             <h3>Event Logs</h3>
             <ul id="logs"></ul>
