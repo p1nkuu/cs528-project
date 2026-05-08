@@ -1,0 +1,237 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #0b0c10;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #c5c6c7;
+}
+
+#canvas-container {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+#ui-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    pointer-events: auto;
+    background: linear-gradient(180deg, rgba(11, 12, 16, 0.92), rgba(14, 18, 26, 0.86));
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #45a29e;
+    box-shadow: 0 0 15px rgba(69, 162, 158, 0.3);
+    max-width: 300px;
+}
+
+#auth-panel {
+    margin-bottom: 20px;
+    border-top: 1px solid #1f2833;
+    padding-top: 10px;
+}
+
+#auth-panel input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #45a29e;
+    background: #1f2833;
+    color: #c5c6c7;
+    outline: none;
+}
+
+#auth-panel input::placeholder {
+    color: #7f8c8d;
+}
+
+.button-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.button-row button {
+    flex: 1;
+    padding: 9px 8px;
+    border: 1px solid #45a29e;
+    border-radius: 6px;
+    background: #1f2833;
+    color: #66fcf1;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.button-row button:hover {
+    background: #233140;
+}
+
+.button-row button.active {
+    background: #45a29e;
+    color: #0b0c10;
+}
+
+.link-button {
+    width: 100%;
+    margin-top: 6px;
+    margin-bottom: 8px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #9be7d4;
+    cursor: pointer;
+    text-align: left;
+    font-size: 12px;
+}
+
+#recording-status,
+#sequence-preview,
+#saved-status {
+    font-size: 12px;
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+#sequence-preview {
+    margin-top: 10px;
+}
+
+.sequence-label {
+    margin-bottom: 8px;
+    color: #9be7d4;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+#sequence-slots {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+
+.sequence-slot {
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    border: 1px solid #45a29e;
+    background: #1f2833;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #66fcf1;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.sequence-slot.filled {
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.25), rgba(69, 162, 158, 0.35));
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.25);
+}
+
+.sequence-slot.locked {
+    border-color: #9be7d4;
+    color: #0b0c10;
+    background: #66fcf1;
+}
+
+#saved-status {
+    color: #9be7d4;
+}
+
+#mode-banner,
+#login-status {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(31, 40, 51, 0.9);
+    border: 1px solid rgba(69, 162, 158, 0.35);
+    font-size: 12px;
+    color: #c5c6c7;
+}
+
+#login-status.logged-in {
+    background: rgba(102, 252, 241, 0.14);
+    color: #66fcf1;
+}
+
+#login-status.login-failed {
+    background: rgba(255, 68, 68, 0.14);
+    color: #ff8585;
+}
+
+h1 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    color: #66fcf1;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+p {
+    margin: 0 0 20px 0;
+    font-size: 14px;
+    color: #c5c6c7;
+}
+
+#status {
+    font-size: 18px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+#last-action {
+    color: #66fcf1;
+    text-transform: uppercase;
+}
+
+#logs-container {
+    margin-bottom: 20px;
+    border-top: 1px solid #1f2833;
+    padding-top: 10px;
+}
+
+h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #45a29e;
+    text-transform: uppercase;
+}
+
+#logs {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 120px;
+    overflow-y: hidden;
+    font-size: 12px;
+}
+
+#logs li {
+    padding: 4px 0;
+    border-bottom: 1px dashed #1f2833;
+}
+
+#coordinates {
+    font-family: monospace;
+    font-size: 14px;
+    background: #1f2833;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    color: #66fcf1;
+}
+
+.flash {
+    animation: textFlash 0.3s ease-out;
+}
+
+@keyframes textFlash {
+    0% { color: #fff; text-shadow: 0 0 10px #fff; }
+    100% { color: #66fcf1; text-shadow: none; }
+}
